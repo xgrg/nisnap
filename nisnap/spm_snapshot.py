@@ -184,13 +184,13 @@ def snap(filepaths, axes=['A', 'S', 'C'], orig=True):
 
 def snap_files(filepaths, axes, orig, opacity, orig_fp):
 
-
+    width = 2000
     fp = orig_fp.replace('.gif', '.jpg')
     # Creating snapshots (along given axes and original if needed)
     log.info('* Creating snapshots...')
     paths, paths_orig = snap(filepaths, axes=axes, orig=orig)
 
-    montage_cmd = 'montage -resize 1000x -tile 1 -background black -geometry +0+0 %s %s'
+    montage_cmd = 'montage -resize %sx -tile 1 -background black -geometry +0+0 %s %s'%(width, '%s', '%s')
     # Compiling images into a single one (one per axis)
     for each in axes:
         cmd = montage_cmd%(' '.join(paths[each]), fp.replace('.jpg', '_%s.jpg'%each))
