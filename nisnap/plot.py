@@ -1,4 +1,7 @@
 import sys
+
+import matplotlib
+matplotlib.use('Agg')
 from nisnap import spm_snapshot as ss
 import tempfile
 import logging as log

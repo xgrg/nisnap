@@ -184,8 +184,6 @@ def snap(filepaths, axes=['A', 'S', 'C'], orig=True):
 
 def snap_files(filepaths, axes, orig, opacity, orig_fp):
 
-    import matplotlib
-    matplotlib.use('Agg')
 
     fp = orig_fp.replace('.gif', '.jpg')
     # Creating snapshots (along given axes and original if needed)
