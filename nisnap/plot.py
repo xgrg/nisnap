@@ -89,9 +89,10 @@ def check_logic(args):
         logger.setLevel(level=log.INFO)
 
 
-def from_files(filepaths, axes='ACS', orig=True, opacity=30):
-    import tempfile
-    fp = tempfile.mkstemp(suffix='.jpg')
+def from_files(filepaths, axes=('A', 'C', 'S'), orig=True, opacity=30):
+    import os, tempfile
+    f, fp = tempfile.mkstemp(suffix='.jpg')
+    os.close(f)
     ss.snap_files(filepaths, axes, orig=True, opacity=30, orig_fp=fp)
     from IPython.display import Image
     return Image(filename=fp.replace('.jpg', '_fusion.jpg'))
