@@ -1,11 +1,20 @@
 import sys
-import spm_snapshot as ss
+from nisnap import spm_snapshot as ss
+import tempfile
+import logging as log
+
 
 def snap_xnat(config_fp, experiment_id, fp, axes=('A', 'C', 'S'),
     orig=True, opacity=10):
 
-    resource_name = 'SPM12_SEGMENT_T2T1_COREG2'
-    ss.snap_xnat(config_fp, experiment_id, resource_name, axes, orig, opacity, fp)
+    resource_name = 'SPM12_SEGMENT_T2T1_COREG'
+    wd = tempfile.gettempdir()
+
+    # Downloading resources
+    filepaths = ss.download_resources(config_fp, experiment_id, resource_name, wd)
+
+    ss.snap_files(filepaths, axes, orig, opacity, fp)
+
 
 
 def snap_files(filepaths, fp, bg=None, axes=('A', 'C', 'S'), opacity=10):
@@ -25,8 +34,12 @@ def create_parser():
     parser.add_argument('--opacity', required=False, type=int)
     parser.add_argument('-e', '--experiment', required=False, type=str)
     parser.add_argument('-o', '--output', required=False, type=argparse.FileType('w'))
-
+    parser.add_argument('--disable_warnings', required=False, action='store_true',
+        default=False)
+    parser.add_argument('--verbose', required=False, action='store_true',
+        default=False)
     parser.add_argument('files', nargs='*', type=argparse.FileType('r'))
+
     return parser
 
 def check_logic(args):
@@ -65,6 +78,47 @@ def check_logic(args):
         msg = 'GIF animation can be created only providing a background image.'
         raise Exception(msg)
 
+    if args.disable_warnings:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    logger = log.getLogger()
+    if args.verbose:
+        logger.setLevel(level=log.DEBUG)
+    else:
+        logger.setLevel(level=log.INFO)
+
+
+def from_files(filepaths, axes='ACS', orig=True, opacity=30):
+    import tempfile
+    fp = tempfile.mkstemp(suffix='.jpg')
+    ss.snap_files(filepaths, axes, orig=True, opacity=30, orig_fp=fp)
+    from IPython.display import Image
+    return Image(filename=fp.replace('.jpg', '_fusion.jpg'))
+
+
+
+def from_xnat(config, experiment_id, resource_name='SPM12_SEGMENT_T2T1_COREG',
+            axes=('A','C','S'), bg=True, opacity=30, animated=False):
+    import os, tempfile
+    ext = '.gif' if animated else '.jpg'
+    f, fp = tempfile.mkstemp(suffix=ext)
+    os.close(f)
+    wd = tempfile.gettempdir()
+
+    # Downloading resources
+    filepaths = ss.download_resources(config, experiment_id, resource_name, wd)
+    ss.snap_files(filepaths, axes=axes, orig=bg, opacity=opacity, orig_fp=fp)
+
+    from IPython.display import Image
+    fp1 = fp
+    if bg:
+        fp1 = fp.replace('.jpg', '_fusion.jpg')
+    if animated:
+        fp1 = fp.replace('.jpg', '.gif')
+
+    return Image(filename=fp1)
+
 
 if __name__ == '__main__':
 
@@ -74,7 +128,6 @@ if __name__ == '__main__':
         parser.print_help(sys.stderr)
         sys.exit(1)
     check_logic(args)
-    print(args)
 
     axes = tuple([e for e in args.axes])
 
