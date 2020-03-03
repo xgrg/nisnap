@@ -74,6 +74,10 @@ def snap_slices(slices, axis, row_size, figsize, func, pbar=None):
             ax.imshow((test * 255).astype(np.uint8), interpolation='none', )
             ax.axis('off')
 
+            ax.text(0, 0, '%i' %slice_index,
+                {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
+
+
             if not pbar is None:
                 pbar.update(1)
 
@@ -106,6 +110,9 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
 
             ax.imshow(test, interpolation='none', cmap='gray')
             ax.axis('off')
+
+            ax.text(0, 0, '%i' %slice_index,
+                {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
 
             if not pbar is None:
                 pbar.update(1)
