@@ -184,6 +184,8 @@ def snap(filepaths, axes=['A', 'S', 'C'], orig=True):
 
 def snap_files(filepaths, axes, orig, opacity, orig_fp):
 
+    # FIXME: be careful if a file contains .gif or .jpg elsewhere
+
     width = 2000
     fp = orig_fp.replace('.gif', '.jpg')
     # Creating snapshots (along given axes and original if needed)
@@ -232,16 +234,16 @@ def snap_files(filepaths, axes, orig, opacity, orig_fp):
             # Fading from raw data to segmentation
             l = list(range(0, opacity, int(opacity/10.0)))
             pbar = tqdm(total=2*len(l), leave=False)
-            for i, op in enumerate(l):
-                cmd = composite_cmd %(op, fp, fp.replace('.jpg', '_orig.jpg'),
+            for i, opac in enumerate(l):
+                cmd = composite_cmd %(opac, fp, fp.replace('.jpg', '_orig.jpg'),
                         fp.replace('.jpg', '_fusion_%03d.jpg'%i))
                 log.debug(cmd)
                 os.system(cmd)
                 pbar.update(1)
 
             # From segmentation to raw data
-            for i, op in enumerate(l):
-                cmd = composite_cmd %(opacity-op, fp, fp.replace('.jpg', '_orig.jpg'),
+            for i, opac in enumerate(l):
+                cmd = composite_cmd %(opacity - opac, fp, fp.replace('.jpg', '_orig.jpg'),
                         fp.replace('.jpg', '_fusion_%03d.jpg'%(len(l)+i)))
                 log.debug(cmd)
                 os.system(cmd)
@@ -252,7 +254,7 @@ def snap_files(filepaths, axes, orig, opacity, orig_fp):
 
             # Collect frames and create gif
             filepaths = []
-            for i, op in enumerate(range(0, 2 * opacity, int(opacity/10.0))):
+            for i, opac in enumerate(range(0, 2 * opacity, int(opacity/10.0))):
                 filepaths.append(fp.replace('.jpg', '_fusion_%03d.jpg'%i))
 
             cmd = 'convert -delay 0 -loop 0 %s %s'\
