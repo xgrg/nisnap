@@ -5,6 +5,7 @@ matplotlib.use('Agg')
 from nisnap import spm_snapshot as ss
 import tempfile
 import logging as log
+import os
 
 
 def snap_xnat(config_fp, experiment_id, fp, resource_name='SPM12_SEGMENT_T2T1_COREG',
@@ -35,7 +36,7 @@ def create_parser():
     parser.add_argument('--rn', required=False, type=str,
         default='SPM12_SEGMENT_T2T1_COREG2')
 
-    parser.add_argument('-o', '--output', required=False, type=argparse.FileType('w'))
+    parser.add_argument('-o', '--output', required=False) #, type=argparse.FileType('w'))
     parser.add_argument('--disable_warnings', required=False, action='store_true',
         default=False)
     parser.add_argument('--verbose', required=False, action='store_true',
@@ -76,7 +77,7 @@ def check_logic(args):
     if not args.opacity:
         args.opacity = 10
 
-    if args.output.name.endswith('.gif') and ((args.config and args.nobg) or (not args.config and not args.bg)):
+    if args.output.endswith('.gif') and ((args.config and args.nobg) or (not args.config and not args.bg)):
         msg = 'GIF animation can be created only providing a background image.'
         raise Exception(msg)
 
@@ -137,10 +138,9 @@ if __name__ == '__main__':
     check_logic(args)
 
     axes = tuple([e for e in args.axes])
-
     if args.config:
-        snap_xnat(args.config.name, args.experiment, args.output.name,
+        snap_xnat(args.config.name, args.experiment, args.output,
             args.rn, axes, not args.nobg, args.opacity)
     else:
-        snap_files([e.name for e in args.files], args.output.name,
+        snap_files([e.name for e in args.files], args.output,
             getattr(args.bg, 'name', None), axes, args.opacity)

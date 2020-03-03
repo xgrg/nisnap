@@ -69,7 +69,7 @@ class RunThemAll(unittest.TestCase):
         filepaths = [args.bg.name]
         filepaths.extend([e.name for e in args.files])
         bg = getattr(args.bg, 'name', None)
-        ss.snap_files(filepaths, axes, not bg is None, args.opacity, args.output.name)
+        ss.snap_files(filepaths, axes, not bg is None, args.opacity, args.output)
 
     def test_003_snap_xnat(self):
         parser = plot.create_parser()
@@ -81,4 +81,4 @@ class RunThemAll(unittest.TestCase):
         filepaths = [args.bg.name]
         filepaths.extend([e.name for e in args.files])
         bg = getattr(args.bg, 'name', None)
-        ss.snap_files(filepaths, axes, not bg is None, args.opacity, args.output.name)
+        ss.snap_files(filepaths, axes, not bg is None, args.opacity, args.output)
