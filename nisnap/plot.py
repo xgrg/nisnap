@@ -16,8 +16,6 @@ def snap_xnat(config_fp, experiment_id, fp, resource_name='SPM12_SEGMENT_T2T1_CO
 
     ss.snap_files(filepaths, axes, orig, opacity, fp)
 
-
-
 def snap_files(filepaths, fp, bg=None, axes=('A', 'C', 'S'), opacity=10):
     filepaths.insert(0, bg)
     ss.snap_files(filepaths, axes, not bg is None, opacity, fp)
@@ -93,6 +91,8 @@ def check_logic(args):
         logger.setLevel(level=log.INFO)
 
 
+# Jupyter Notebook integrations
+
 def from_files(filepaths, axes=('A', 'C', 'S'), orig=True, opacity=30):
     import os, tempfile
     f, fp = tempfile.mkstemp(suffix='.jpg')
@@ -124,6 +124,8 @@ def from_xnat(config, experiment_id, resource_name='SPM12_SEGMENT_T2T1_COREG',
 
     return Image(filename=fp1)
 
+
+# main
 
 if __name__ == '__main__':
 
