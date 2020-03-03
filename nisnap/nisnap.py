@@ -1,16 +1,17 @@
 import sys
+import spm_snapshot as ss
 
 def snap_xnat(config_fp, experiment_id, fp, axes=('A', 'C', 'S'),
     orig=True, opacity=10):
 
-    from spm_snapshot import run
     resource_name = 'SPM12_SEGMENT_T2T1_COREG2'
-    run(config_fp, experiment_id, resource_name, axes, orig, opacity, fp)
+    ss.snap_xnat(config_fp, experiment_id, resource_name, axes, orig, opacity, fp)
 
 
-def snap_files(files, fp, bg=None, axes=('A', 'C', 'S'), opacity=10):
-    print(files, fp, bg, axes, opacity)
-    pass
+def snap_files(filepaths, fp, bg=None, axes=('A', 'C', 'S'), opacity=10):
+    filepaths.insert(0, bg)
+    ss.snap_files(filepaths, axes, not bg is None, opacity, fp)
+
 
 def create_parser():
     import argparse

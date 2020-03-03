@@ -8,6 +8,7 @@ import os.path as op
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 import pyxnat
+import logging as log
 # import urllib3
 
 def download_resources(config_fp, experiment_id, resource_name, wd):
@@ -22,7 +23,7 @@ def download_resources(config_fp, experiment_id, resource_name, wd):
                      'xnat:mrScanData/type',
                      'xsiType']).data
     for s in scans:
-        print(s)
+        log.info(s)
         scan = e.scan(s['xnat:mrscandata/id'])
 
         if scan.attrs.get('type') in t2_lut_names and \
@@ -45,15 +46,18 @@ def download_resources(config_fp, experiment_id, resource_name, wd):
     return filepaths
 
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
 def snap_slices(slices, axis, row_size, figsize, func):
-    def chunks(lst, n):
-        """Yield successive n-sized chunks from lst."""
-        for i in range(0, len(lst), n):
-            yield lst[i:i + n]
 
     paths = []
     bb = {}
-    for a, chunk in enumerate(tqdm(chunks(slices, row_size))):
+
+    for a, chunk in enumerate(chunks(slices, row_size)):
         _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.jpg')
         paths.append(path)
         bb[a] = []
@@ -67,7 +71,7 @@ def snap_slices(slices, axis, row_size, figsize, func):
             bb[a].append((xs, ys, zs))
             test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1, :]
 
-            ax.imshow(test, interpolation='none', )
+            ax.imshow((test * 255).astype(np.uint8), interpolation='none', )
             ax.axis('off')
 
         fig.savefig(path, facecolor=fig.get_facecolor(),
@@ -77,15 +81,13 @@ def snap_slices(slices, axis, row_size, figsize, func):
     return paths, bb
 
 
-def snap_slices_orig(slices, axis, row_size, figsize, func, bb):
-    def chunks(lst, n):
-        """Yield successive n-sized chunks from lst."""
-        for i in range(0, len(lst), n):
-            yield lst[i:i + n]
+
+
+def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
 
     paths = []
 
-    for a, chunk in enumerate(tqdm(chunks(slices, row_size))):
+    for a, chunk in enumerate(chunks(slices, row_size)):
         _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.jpg')
         paths.append(path)
 
@@ -97,7 +99,8 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb):
             xs, ys, zs = bb[a][i]
             test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
 
-            ax.imshow(test, interpolation='none', cmap='gray')
+            ax.imshow((test * 255).astype(np.uint8), interpolation='none',
+                cmap='gray')
             ax.axis('off')
 
         fig.savefig(path, facecolor=fig.get_facecolor(),
@@ -105,6 +108,10 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb):
                 transparent=True,
                 pad_inches=0)
     return paths
+
+
+
+
 
 def snap(filepaths, axes=['A', 'S', 'C'], orig=True):
 
@@ -116,72 +123,94 @@ def snap(filepaths, axes=['A', 'S', 'C'], orig=True):
 
     paths = {}
     paths_orig = {}
+    slices = {'A': list(range(100, data.shape[2] - 60, 3)),
+        'C': list(range(50, data.shape[1] - 70, 3)),
+        'S': list(range(90, data.shape[0] - 90, 1))}
 
-    if 'A' in axes:
-        slices = range(100, data.shape[2] - 60, 3)
-        path, bb = snap_slices(slices, axis='A', row_size=9, figsize=(37, 3),
-            func=lambda x: data[:,:,x,:])
-        paths['A'] = path
+    lambdas = {'A': lambda x: data[:,:,x,:],
+               'C': lambda x: data[:,x,:,:],
+               'S': lambda x: data[x,:,:,:]}
 
-        if orig:
-            path = snap_slices_orig(slices, axis='A', row_size=9, figsize=(37, 3),
-                func=lambda x: orig_data[:,:,x], bb=bb)
-            paths_orig['A'] = path
+    lambdas_orig = {'A': lambda x: orig_data[:,:,x],
+               'C': lambda x: orig_data[:,x,:],
+               'S': lambda x: orig_data[x,:,:]}
 
-    if 'C' in axes:
-        slices = range(50, data.shape[1] - 70, 3)
-        path, bb = snap_slices(slices, axis='C', row_size=9, figsize=(40, 3),
-            func=lambda x: data[:,x,:,:])
-        paths['C'] = path
+    row_sizes = {'A': 9, 'C': 9, 'S':6}
+    fig_sizes = {'A': 37, 'C': 40, 'S':18}
 
-        if orig:
-            path = snap_slices_orig(slices, axis='C', row_size=9, figsize=(40, 3),
-                func=lambda x: orig_data[:,x,:], bb=bb)
-            paths_orig['C'] = path
-
-    if 'S' in axes:
-        slices = range(90, data.shape[0] - 90, 1)
-        path, bb = snap_slices(slices, axis='S', row_size=6, figsize=(18, 3),
-            func=lambda x: data[x,:,:,:])
-        paths['S'] = path
+    print(len(slices['A']), len(slices['C']), len(slices['S']) )
+    for each in axes:
+    #if 'A' in axes:
+        path, bb = snap_slices(slices[each], axis=each, row_size=row_sizes[each],
+            figsize=(fig_sizes[each], 3), func=lambdas[each])
+        paths[each] = path
 
         if orig:
-            path = snap_slices_orig(slices, axis='S', row_size=6, figsize=(18, 3),
-                func=lambda x: orig_data[x,:,:], bb=bb)
-            paths_orig['S'] = path
+            path = snap_slices_orig(slices[each], axis=each, row_size=row_sizes[each],
+                figsize=(fig_sizes[each], 3), func=lambdas_orig[each], bb=bb)
+            paths_orig[each] = path
+
+    # if 'C' in axes:
+    #     path, bb = snap_slices(slices['C'], axis='C', row_size=9, figsize=(40, 3),
+    #         func=lambda x: data[:,x,:,:])
+    #     paths['C'] = path
+    #
+    #     if orig:
+    #         path = snap_slices_orig(slices['C'], axis='C', row_size=9, figsize=(40, 3),
+    #             func=lambda x: orig_data[:,x,:], bb=bb)
+    #         paths_orig['C'] = path
+    #
+    # if 'S' in axes:
+    #     path, bb = snap_slices(slices['S'], axis='S', row_size=6, figsize=(18, 3),
+    #         func=lambda x: data[x,:,:,:])
+    #     paths['S'] = path
+    #
+    #     if orig:
+    #         path = snap_slices_orig(slices['S'], axis='S', row_size=6, figsize=(18, 3),
+    #             func=lambda x: orig_data[x,:,:], bb=bb)
+    #         paths_orig['S'] = path
 
     return paths, paths_orig
 
 
-def run(config_fp, experiment_id, resource_name, axes, orig, opacity, fp):
+
+
+def snap_xnat(config_fp, experiment_id, resource_name, axes, orig, opacity, fp):
     wd = '/tmp/'
     # Downloading resources
-    print('Downloading resources...')
+    log.info('* Downloading resources...')
     filepaths = download_resources(config_fp, experiment_id, resource_name, wd)
 
+    snap_files(filepaths, axes, orig, opacity, fp)
+
+
+
+
+
+def snap_files(filepaths, axes, orig, opacity, fp):
     # Creating snapshots (along given axes and original if needed)
-    print('Creating snapshots...')
+    log.info('* Creating snapshots...')
     paths, paths_orig = snap(filepaths, axes=axes, orig=orig)
 
     montage_cmd = 'montage -resize 1000x -tile 1 -background black -geometry +0+0 %s %s'
     # Compiling images into a single one (one per axis)
     for each in axes:
         cmd = montage_cmd%(' '.join(paths[each]), fp.replace('.jpg', '_%s.jpg'%each))
-        print(cmd)
+        log.info(cmd)
         os.system(cmd)
         for e in paths[each]:
             os.unlink(e) # Delete individual snapshots
 
     # Create one image with the selected axes
     cmd = montage_cmd%(' '.join([fp.replace('.jpg', '_%s.jpg'%each) for each in axes]), fp)
-    print(cmd)
+    log.info(cmd)
     os.system(cmd)
 
     if orig:
         # Repeat the process (montage) with the "raw" snapshots
         for each in axes:
             cmd = montage_cmd%(' '.join(paths_orig[each]), fp.replace('.jpg', '_orig_%s.jpg'%each))
-            print(cmd)
+            log.info(cmd)
             os.system(cmd)
             for e in paths_orig[each]:
                 os.unlink(e)
@@ -189,7 +218,7 @@ def run(config_fp, experiment_id, resource_name, axes, orig, opacity, fp):
         # Create one image with the selected axes
         cmd = montage_cmd%(' '.join([fp.replace('.jpg', '_orig_%s.jpg'%each) for each in axes]),
                 fp.replace('.jpg', '_orig.jpg'))
-        print(cmd)
+        log.info(cmd)
         os.system(cmd)
 
     # At this point there should be two images max. (segmentation and raw image)
@@ -202,14 +231,14 @@ def run(config_fp, experiment_id, resource_name, axes, orig, opacity, fp):
             for i in range(0, 100, 10):
                 cmd = composite_cmd %(i, fp, fp.replace('.jpg', '_orig.jpg'),
                         fp.replace('.jpg', '_fusion_%03d.jpg'%i))
-                print(cmd)
+                log.info(cmd)
                 os.system(cmd)
 
             # From segmentation to raw data
             for i in range(0, 100, 10):
                 cmd = composite_cmd %(100-i, fp, fp.replace('.jpg', '_orig.jpg'),
                         fp.replace('.jpg', '_fusion_%03d.jpg'%(100+i)))
-                print(cmd)
+                log.info(cmd)
                 os.system(cmd)
 
             # Collect frames and create gif
@@ -219,7 +248,7 @@ def run(config_fp, experiment_id, resource_name, axes, orig, opacity, fp):
 
             cmd = 'convert -delay 20 -loop 0 %s %s'\
                 %(' '.join(filepaths), fp.replace('.jpg', '.gif'))
-            print(cmd)
+            log.info(cmd)
             os.system(cmd)
 
         else:
@@ -227,9 +256,15 @@ def run(config_fp, experiment_id, resource_name, axes, orig, opacity, fp):
             # Blends the two images (segmentation and original) into a composite one
             cmd = composite_cmd %(opacity, fp, fp.replace('.jpg', '_orig.jpg'),
                     fp.replace('.jpg', '_fusion.jpg'))
-            print(cmd)
+            log.info(cmd)
             os.system(cmd)
-            print('Saved in %s'%fp.replace('.jpg', '_fusion.jpg'))
+            log.info('Saved in %s'%fp.replace('.jpg', '_fusion.jpg'))
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
