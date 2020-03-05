@@ -1,27 +1,3 @@
-import sys
-
-import matplotlib
-matplotlib.use('Agg')
-from nisnap import spm_snapshot as ss
-import tempfile
-import logging as log
-import os
-
-
-def snap_xnat(config_fp, experiment_id, fp, resource_name='SPM12_SEGMENT_T2T1_COREG',
-    axes=('A', 'C', 'S'), orig=True, opacity=10):
-
-    wd = tempfile.gettempdir()
-    # Downloading resources
-    filepaths = ss.download_resources(config_fp, experiment_id, resource_name, wd)
-
-    ss.snap_files(filepaths, axes, orig, opacity, fp)
-
-def snap_files(filepaths, fp, bg=None, axes=('A', 'C', 'S'), opacity=10):
-    filepaths.insert(0, bg)
-    ss.snap_files(filepaths, axes, not bg is None, opacity, fp)
-
-
 def create_parser():
     import argparse
 
@@ -33,7 +9,7 @@ def create_parser():
     parser.add_argument('--axes', required=False, default='ACS')
     parser.add_argument('--opacity', required=False, type=int)
     parser.add_argument('-e', '--experiment', required=False, type=str)
-    parser.add_argument('--rn', required=False, type=str,
+    parser.add_argument('--resource', required=False, type=str,
         default='SPM12_SEGMENT_T2T1_COREG2')
 
     parser.add_argument('-o', '--output', required=False) #, type=argparse.FileType('w'))
@@ -85,6 +61,7 @@ def check_logic(args):
         import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+    import logging as log
     logger = log.getLogger()
     if args.verbose:
         logger.setLevel(level=log.DEBUG)
@@ -92,55 +69,15 @@ def check_logic(args):
         logger.setLevel(level=log.INFO)
 
 
-# Jupyter Notebook integrations
-
-def from_files(filepaths, axes=('A', 'C', 'S'), orig=True, opacity=30):
-    import os, tempfile
-    f, fp = tempfile.mkstemp(suffix='.jpg')
-    os.close(f)
-    ss.snap_files(filepaths, axes, orig=True, opacity=30, orig_fp=fp)
-    from IPython.display import Image
-    return Image(filename=fp.replace('.jpg', '_fusion.jpg'))
-
-
-
-def from_xnat(config, experiment_id, resource_name='SPM12_SEGMENT_T2T1_COREG',
-            axes=('A','C','S'), bg=True, opacity=30, animated=False):
-    import os, tempfile
-    ext = '.gif' if animated else '.jpg'
-    f, fp = tempfile.mkstemp(suffix=ext)
-    os.close(f)
-    wd = tempfile.gettempdir()
-
-    # Downloading resources
-    filepaths = ss.download_resources(config, experiment_id, resource_name, wd)
-    ss.snap_files(filepaths, axes=axes, orig=bg, opacity=opacity, orig_fp=fp)
-
-    from IPython.display import Image
-    fp1 = fp
-    if bg:
-        fp1 = fp.replace('.jpg', '_fusion.jpg')
-    if animated:
-        fp1 = fp.replace('.jpg', '.gif')
-
-    return Image(filename=fp1)
-
-
-# main
-
-if __name__ == '__main__':
-
-    parser = create_parser()
-    args = parser.parse_args()
-    if len(sys.argv)==1:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
+def run(args):
     check_logic(args)
 
     axes = tuple([e for e in args.axes])
     if args.config:
-        snap_xnat(args.config.name, args.experiment, args.output,
-            args.rn, axes, not args.nobg, args.opacity)
+        from . import xnat
+        xnat.plot_segment(args.config.name, args.experiment, args.output,
+            args.resource, axes, not args.nobg, args.opacity)
     else:
-        snap_files([e.name for e in args.files], args.output,
-            getattr(args.bg, 'name', None), axes, args.opacity)
+        from . import spm
+        spm.plot_segment([e.name for e in args.files], axes,
+            getattr(args.bg, 'name', None), args.opacity, args.output)

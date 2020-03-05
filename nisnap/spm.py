@@ -1,48 +1,14 @@
+import matplotlib
+matplotlib.use('Agg')
+
 import nibabel as nib
-import sys
 import tempfile, os
-sys.path.append('/home/grg/git/bbrc-validator/')
-from bbrc.validation.utils import __is_valid_scan__
 import numpy as np
 import os.path as op
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 import pyxnat
 import logging as log
-
-def download_resources(config_fp, experiment_id, resource_name, wd):
-    x = pyxnat.Interface(config=config_fp)
-
-
-    t2_lut_names = ['T2_ALFA1']
-    t2_scans = []
-    e = x.select.experiment(experiment_id)
-    scans = x.array.mrscans(experiment_id=experiment_id,\
-            columns=['xnat:mrScanData/quality',
-                     'xnat:mrScanData/type',
-                     'xsiType']).data
-    for s in scans:
-        scan = e.scan(s['xnat:mrscandata/id'])
-
-        if scan.attrs.get('type') in t2_lut_names and \
-            __is_valid_scan__(x, s):
-                t2_scans.append(scan.id())
-    assert(len(t2_lut_names) == 1)
-
-    filepaths = []
-    t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
-    fp1 = op.join(wd, '%s_T2_T1space.nii.gz'%experiment_id)
-    filepaths.append(fp1)
-    t2_t1space.get(fp1)
-
-    r = e.resource(resource_name)
-    for each in ['c1', 'c2', 'c3']:
-        c = list(r.files('%s*.nii.gz'%each))[0]
-        fp = op.join(wd, '%s_%s.nii.gz'%(experiment_id, each))
-        c.get(fp)
-        filepaths.append(fp)
-    return filepaths
-
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
@@ -88,8 +54,6 @@ def snap_slices(slices, axis, row_size, figsize, func, pbar=None):
     return paths, bb
 
 
-
-
 def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
 
     paths = []
@@ -125,9 +89,7 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
 
 
 
-
-
-def snap(filepaths, axes=['A', 'S', 'C'], orig=True):
+def __snap__(filepaths, axes=['A', 'S', 'C'], orig=True):
 
     c = nib.load(filepaths[1]).dataobj.shape
 
@@ -182,15 +144,19 @@ def snap(filepaths, axes=['A', 'S', 'C'], orig=True):
 
 
 
-def snap_files(filepaths, axes, orig, opacity, orig_fp):
+def plot_segment(filepaths, axes, orig, opacity, filename=None):
 
     # FIXME: be careful if a file contains .gif or .jpg elsewhere
 
     width = 2000
-    fp = orig_fp.replace('.gif', '.jpg')
+    fp = filename
+    if filename is None:
+        f, fp = tempfile.mkstemp(suffix='.jpg')
+        os.close(f)
+    fp = fp.replace('.gif', '.jpg')
     # Creating snapshots (along given axes and original if needed)
     log.info('* Creating snapshots...')
-    paths, paths_orig = snap(filepaths, axes=axes, orig=orig)
+    paths, paths_orig = __snap__(filepaths, axes=axes, orig=orig)
 
     montage_cmd = 'montage -resize %sx -tile 1 -background black -geometry +0+0 %s %s'%(width, '%s', '%s')
     # Compiling images into a single one (one per axis)
@@ -229,7 +195,7 @@ def snap_files(filepaths, axes, orig, opacity, orig_fp):
     composite_cmd = 'composite -dissolve %s -gravity Center %s %s -alpha Set %s'
 
     if orig:
-        if orig_fp.endswith('.gif'): # will generate a .gif
+        if fp.endswith('.gif'): # will generate a .gif
 
             # Fading from raw data to segmentation
             l = list(range(0, opacity, int(opacity/10.0)))
@@ -277,26 +243,13 @@ def snap_files(filepaths, axes, orig, opacity, orig_fp):
             os.system(cmd)
             log.info('Saved in %s'%fp.replace('.jpg', '_fusion.jpg'))
 
+    if filename is None:
+        # Return image
+        from IPython.display import Image
+        fp1 = fp
+        if bg:
+            fp1 = fp.replace('.jpg', '_fusion.jpg')
+        if animated:
+            fp1 = fp.replace('.jpg', '.gif')
 
-
-
-
-
-
-
-
-if __name__ == '__main__':
-    experiment_id = 'BBRCDEV_E02849'
-    fp = '/tmp/fusion.jpg'
-    resource_name = 'SPM12_SEGMENT_T2T1_COREG'
-    config_fp = '/home/grg/.xnat_goperto_ci.cfg'
-    axes = 'S'
-    opacity = 100
-    orig = True
-    wd = tempfile.gettempdir()
-
-    # Downloading resources
-    log.info('* Downloading resources...')
-    filepaths = download_resources(config_fp, experiment_id, resource_name, wd)
-
-    snap_files(filepaths, axes, orig, opacity, fp)
+        return Image(filename=fp1)

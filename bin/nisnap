@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+from nisnap import parse
+
+if __name__ == '__main__':
+
+    parser = parse.create_parser()
+    args = parser.parse_args()
+
+    import sys
+    if len(sys.argv)==1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    parse.run(args)
