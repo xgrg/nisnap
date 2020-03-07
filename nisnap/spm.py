@@ -4,11 +4,11 @@ matplotlib.use('Agg')
 import nibabel as nib
 import tempfile, os
 import numpy as np
-import os.path as op
 from matplotlib import pyplot as plt
 from tqdm import tqdm
-import pyxnat
 import logging as log
+import shutil
+
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
@@ -22,7 +22,7 @@ def snap_slices(slices, axis, row_size, figsize, func, pbar=None):
     bb = {}
 
     for a, chunk in enumerate(chunks(slices, row_size)):
-        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.jpg')
+        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.png')
         paths.append(path)
         bb[a] = []
 
@@ -59,7 +59,7 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
     paths = []
 
     for a, chunk in enumerate(chunks(slices, row_size)):
-        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.jpg')
+        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.png')
         paths.append(path)
 
         fig = plt.figure(dpi=300, figsize=figsize)
@@ -89,17 +89,17 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
 
 
 
-def __snap__(filepaths, axes=['A', 'S', 'C'], orig=True):
+def __snap__(filepaths, axes=['A', 'S', 'C'], bg=None, cut_coords=None):
+    orig = not bg is None
+    c = nib.load(filepaths[0]).dataobj.shape
 
-    c = nib.load(filepaths[1]).dataobj.shape
-
-    stack = [np.asarray(nib.load(e).dataobj) for e in filepaths[1:]]
+    stack = [np.asarray(nib.load(e).dataobj) for e in filepaths[:]]
     while len(stack) < 3:
         stack.append(np.zeros(c))
 
     data = np.stack(stack, axis=-1)
     if orig:
-        orig_data = np.asarray(nib.load(filepaths[0]).dataobj)
+        orig_data = np.asarray(nib.load(bg).dataobj)
 
     plt.rcParams['figure.facecolor'] = 'black'
     plt.rcParams.update({'figure.max_open_warning': 0})
@@ -110,6 +110,20 @@ def __snap__(filepaths, axes=['A', 'S', 'C'], orig=True):
         'C': list(range(50, data.shape[1] - 70, 3)),
         'S': list(range(90, data.shape[0] - 90, 1))}
 
+    row_sizes = {'A': 9, 'C': 9, 'S':6}
+    fig_sizes = {'A': 37, 'C': 40, 'S':18}
+
+    if not cut_coords is None:
+        if isinstance(cut_coords, list):
+            slices = {'A': cut_coords, 'S': cut_coords, 'C': cut_coords}
+            lc = len(cut_coords)
+            row_sizes = {'A': lc, 'S': lc, 'C': lc}
+        elif isinstance(cut_coords, dict):
+            slices = dict({e: cut_coords[e] for e in axes})
+            row_sizes = dict({e: len(cut_coords[e]) for e in axes})
+
+
+
     lambdas = {'A': lambda x: data[:,:,x,:],
                'C': lambda x: data[:,x,:,:],
                'S': lambda x: data[x,:,:,:]}
@@ -117,9 +131,6 @@ def __snap__(filepaths, axes=['A', 'S', 'C'], orig=True):
     lambdas_orig = {'A': lambda x: orig_data[:,:,x],
                'C': lambda x: orig_data[:,x,:],
                'S': lambda x: orig_data[x,:,:]}
-
-    row_sizes = {'A': 9, 'C': 9, 'S':6}
-    fig_sizes = {'A': 37, 'C': 40, 'S':18}
 
     n_slices = sum([len(slices[e]) for e in axes])
     if orig:
@@ -144,73 +155,75 @@ def __snap__(filepaths, axes=['A', 'S', 'C'], orig=True):
 
 
 
-def plot_segment(filepaths, axes, orig, opacity, filename=None):
-
-    # FIXME: be careful if a file contains .gif or .jpg elsewhere
+def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
+        animated=False, cut_coords=None, savefig=None):
+    orig = not bg is None
+    # FIXME: be careful if a file contains .gif or .png elsewhere
 
     width = 2000
-    fp = filename
-    if filename is None:
-        f, fp = tempfile.mkstemp(suffix='.jpg')
-        os.close(f)
-    fp = fp.replace('.gif', '.jpg')
+    f, fp = tempfile.mkstemp(suffix='.png')
+    os.close(f)
+
     # Creating snapshots (along given axes and original if needed)
     log.info('* Creating snapshots...')
-    paths, paths_orig = __snap__(filepaths, axes=axes, orig=orig)
+    paths, paths_orig = __snap__(filepaths, axes=axes, bg=bg, cut_coords=cut_coords)
 
     montage_cmd = 'montage -resize %sx -tile 1 -background black -geometry +0+0 %s %s'%(width, '%s', '%s')
     # Compiling images into a single one (one per axis)
     for each in axes:
-        cmd = montage_cmd%(' '.join(paths[each]), fp.replace('.jpg', '_%s.jpg'%each))
+        cmd = montage_cmd%(' '.join(paths[each]), fp.replace('.png', '_%s.png'%each))
         log.debug(cmd)
         os.system(cmd)
         for e in paths[each]:
             os.unlink(e) # Delete individual snapshots
 
     # Create one image with the selected axes
-    cmd = montage_cmd%(' '.join([fp.replace('.jpg', '_%s.jpg'%each) for each in axes]), fp)
+    cmd = montage_cmd%(' '.join([fp.replace('.png', '_%s.png'%each) for each in axes]), fp)
     log.debug(cmd)
     os.system(cmd)
-    log.info('Saved in %s'%fp)
-
+    #log.info('Saved in %s'%fp)
+    for each in axes:
+        os.unlink(fp.replace('.png', '_%s.png'%each))
 
     if orig:
         # Repeat the process (montage) with the "raw" snapshots
         for each in axes:
-            cmd = montage_cmd%(' '.join(paths_orig[each]), fp.replace('.jpg', '_orig_%s.jpg'%each))
+            cmd = montage_cmd%(' '.join(paths_orig[each]), fp.replace('.png', '_orig_%s.png'%each))
             log.debug(cmd)
             os.system(cmd)
             for e in paths_orig[each]:
                 os.unlink(e)
 
         # Create one image with the selected axes
-        cmd = montage_cmd%(' '.join([fp.replace('.jpg', '_orig_%s.jpg'%each) for each in axes]),
-                fp.replace('.jpg', '_orig.jpg'))
+        cmd = montage_cmd%(' '.join([fp.replace('.png', '_orig_%s.png'%each) for each in axes]),
+                fp.replace('.png', '_orig.png'))
         log.debug(cmd)
         os.system(cmd)
-        log.info('Saved in %s'%fp.replace('.jpg', '_orig.jpg'))
+        #log.info('Saved in %s'%fp.replace('.png', '_orig.png'))
+        for each in axes:
+            os.unlink(fp.replace('.png', '_orig_%s.png'%each))
 
 
     # At this point there should be two images max. (segmentation and raw image)
     composite_cmd = 'composite -dissolve %s -gravity Center %s %s -alpha Set %s'
 
     if orig:
-        if fp.endswith('.gif'): # will generate a .gif
+        if animated: # will generate a .gif
 
             # Fading from raw data to segmentation
             l = list(range(0, opacity, int(opacity/10.0)))
             pbar = tqdm(total=2*len(l), leave=False)
             for i, opac in enumerate(l):
-                cmd = composite_cmd %(opac, fp, fp.replace('.jpg', '_orig.jpg'),
-                        fp.replace('.jpg', '_fusion_%03d.jpg'%i))
+                cmd = composite_cmd %(opac, fp, fp.replace('.png', '_orig.png'),
+                        fp.replace('.png', '_fusion_%03d.png'%i))
                 log.debug(cmd)
                 os.system(cmd)
                 pbar.update(1)
 
             # From segmentation to raw data
             for i, opac in enumerate(l):
-                cmd = composite_cmd %(opacity - opac, fp, fp.replace('.jpg', '_orig.jpg'),
-                        fp.replace('.jpg', '_fusion_%03d.jpg'%(len(l)+i)))
+                cmd = composite_cmd %(opacity - opac, fp, fp.replace('.png', '_orig.png'),
+                        fp.replace('.png', '_fusion_%03d.png'%(len(l)+i)))
                 log.debug(cmd)
                 os.system(cmd)
                 pbar.update(1)
@@ -221,35 +234,69 @@ def plot_segment(filepaths, axes, orig, opacity, filename=None):
             # Collect frames and create gif
             filepaths = []
             for i, opac in enumerate(range(0, 2 * opacity, int(opacity/10.0))):
-                filepaths.append(fp.replace('.jpg', '_fusion_%03d.jpg'%i))
+                filepaths.append(fp.replace('.png', '_fusion_%03d.png'%i))
 
             cmd = 'convert -delay 0 -loop 0 %s %s'\
-                %(' '.join(filepaths), fp.replace('.jpg', '.gif'))
+                %(' '.join(filepaths), fp.replace('.png', '.gif'))
             log.debug(cmd)
             os.system(cmd)
-            log.info('Saved in %s'%fp.replace('.jpg', '.gif'))
+            #log.info('Saved in %s'%fp.replace('.png', '.gif'))
 
             #Removing fusions (jpeg files)
             for each in filepaths:
                 os.unlink(each)
-
+            os.unlink(fp)
+            os.unlink(fp.replace('.png', '_orig.png'))
 
         else:
-
             # Blends the two images (segmentation and original) into a composite one
-            cmd = composite_cmd %(opacity, fp, fp.replace('.jpg', '_orig.jpg'),
-                    fp.replace('.jpg', '_fusion.jpg'))
+            cmd = composite_cmd %(opacity, fp, fp.replace('.png', '_orig.png'),
+                    fp.replace('.png', '_fusion.png'))
             log.debug(cmd)
             os.system(cmd)
-            log.info('Saved in %s'%fp.replace('.jpg', '_fusion.jpg'))
 
-    if filename is None:
+            os.unlink(fp)
+            os.unlink(fp.replace('.png', '_orig.png'))
+
+    # Cleaning and saving files in right location
+
+    if orig:
+        if animated:
+            if not savefig is None:
+                shutil.move(fp.replace('.png', '.gif'), savefig)
+                log.info('Saved in %s'%savefig)
+
+        else:
+            if not savefig is None:
+                shutil.move(fp.replace('.png', '_fusion.png'), savefig)
+                log.info('Saved in %s'%fp)
+            else:
+                shutil.move(fp.replace('.png', '_fusion.png'), fp)
+                log.info('Saved in %s'%fp)
+
+    else:
+        if not savefig is None:
+            shutil.move(fp, savefig)
+            log.info('Saved in %s'%savefig)
+
+
+
+
+def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30,
+        animated=False, savefig=None):
+    fp = savefig
+    if savefig is None:
+        if animated:
+            f, fp = tempfile.mkstemp(suffix='.gif')
+        else:
+            f, fp = tempfile.mkstemp(suffix='.png')
+        os.close(f)
+
+    __plot_segment__(filepaths, axes, bg, opacity=opacity,
+        animated=animated, savefig=fp)
+
+
+    if savefig is None:
         # Return image
         from IPython.display import Image
-        fp1 = fp
-        if bg:
-            fp1 = fp.replace('.jpg', '_fusion.jpg')
-        if animated:
-            fp1 = fp.replace('.jpg', '.gif')
-
-        return Image(filename=fp1)
+        return Image(filename=fp)
