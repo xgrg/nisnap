@@ -23,13 +23,13 @@ def download_resources(config, experiment_id, resource_name,  destination, raw=T
     import pyxnat
     x = pyxnat.Interface(config=config)
     filepaths = []
+    e = x.select.experiment(experiment_id)
 
     if 'SPM12' in resource_name:
 
         if raw:
             t2_lut_names = ['T2_ALFA1']
             t2_scans = []
-            e = x.select.experiment(experiment_id)
             scans = x.array.mrscans(experiment_id=experiment_id,\
                     columns=['xnat:mrScanData/quality',
                              'xnat:mrScanData/type',

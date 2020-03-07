@@ -30,7 +30,7 @@ def snap_slices(slices, axis, row_size, figsize, func, pbar=None):
 
         for i, slice_index in enumerate(chunk):
             ax = fig.add_subplot(1, len(chunk), i+1, label='slice_%s'%slice_index)
-            test = np.flip(np.swapaxes(np.abs(func(slice_index)), 0, 1), 0)
+            test = np.flip(np.swapaxes(np.abs(func(int(slice_index))), 0, 1), 0)
             xs, ys, zs = np.where(test!=0)
             bb[a].append((xs, ys, zs))
 
@@ -63,10 +63,9 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
         paths.append(path)
 
         fig = plt.figure(dpi=300, figsize=figsize)
-
         for i, slice_index in enumerate(chunk):
             ax = fig.add_subplot(1, len(chunk), i+1, label='slice_%s'%slice_index)
-            test = np.flip(np.swapaxes(np.abs(func(slice_index)), 0, 1), 0)
+            test = np.flip(np.swapaxes(np.abs(func(int(slice_index))), 0, 1), 0)
             xs, ys, zs = bb[a][i]
 
             if len(xs) == 0: continue
@@ -190,12 +189,21 @@ def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
             os.unlink(e) # Delete individual snapshots
 
     # Create one image with the selected axes
+
     cmd = montage_cmd%(' '.join([fp.replace('.png', '_%s.png'%each) for each in axes]), fp)
     log.debug(cmd)
     os.system(cmd)
+    import os.path as op
+    log.debug([fp.replace('.png', '_%s.png'%each) for each in axes])
+    log.debug([op.isfile(fp.replace('.png', '_%s.png'%each)) for each in axes])
     #log.info('Saved in %s'%fp)
     for each in axes:
-        os.unlink(fp.replace('.png', '_%s.png'%each))
+        fp1 = fp.replace('.png', '_%s.png'%each)
+        if op.isfile(fp1):
+            os.unlink(fp1)
+        else:
+            from glob import glob
+            log.warning('%s not found. %s'%(fp1, glob('/tmp/tmp*.png')))
 
     if orig:
         # Repeat the process (montage) with the "raw" snapshots
@@ -303,7 +311,6 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, cut_coords=
         else:
             f, fp = tempfile.mkstemp(suffix='.png')
         os.close(f)
-
     __plot_segment__(filepaths, axes=axes, bg=bg, opacity=opacity, cut_coords=cut_coords,
         animated=animated, savefig=fp, figsize=figsize)
 

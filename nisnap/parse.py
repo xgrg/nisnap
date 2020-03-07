@@ -75,9 +75,11 @@ def run(args):
     axes = tuple([e for e in args.axes])
     if args.config:
         from . import xnat
-        xnat.plot_segment(args.config.name, args.experiment, args.output,
-            args.resource, axes, not args.nobg, args.opacity)
+        xnat.plot_segment(args.config.name, args.experiment, savefig=args.output,
+            resource_name=args.resource, axes=axes, raw=not args.nobg,
+            opacity=args.opacity, animated=args.output.endswith('.gif'))
     else:
         from . import spm
-        spm.plot_segment([e.name for e in args.files], axes,
-            getattr(args.bg, 'name', None), args.opacity, args.output)
+        spm.plot_segment([e.name for e in args.files], axes=axes,
+            bg=args.bg.name, opacity=args.opacity,
+            animated=args.output.endswith('.gif'), savefig=args.output)

@@ -1,0 +1,20 @@
+before_script:
+  - python -V                                               # Print out python version for debugging
+  - export PYTHONWARNINGS="ignore:Unverified HTTPS request" # Suppress InsecureRequestWarning
+
+
+stages:
+    - "test"
+
+.test:
+    script:
+       - pip install --quiet -r requirements.txt
+       - python tests/fetch_config.py https://bscmaragall01.bsc.es --xnat_user $XNAT_USER --xnat_password $XNAT_PASSWORD --unverified_ssl_context
+       - nosetests tests --with-coverage --cover-inclusive --cover-erase --cover-package .
+       - coverage report -m
+    coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
+
+test-3.7:
+    extends: ".test"
+    stage: "test"
+    image: "python:3.7"
