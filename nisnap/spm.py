@@ -89,7 +89,9 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
 
 
 
-def __snap__(filepaths, axes=['A', 'S', 'C'], bg=None, cut_coords=None):
+def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
+        figsize=None):
+    from collections.abc import Iterable
     orig = not bg is None
     c = nib.load(filepaths[0]).dataobj.shape
 
@@ -111,17 +113,26 @@ def __snap__(filepaths, axes=['A', 'S', 'C'], bg=None, cut_coords=None):
         'S': list(range(90, data.shape[0] - 90, 1))}
 
     row_sizes = {'A': 9, 'C': 9, 'S':6}
-    fig_sizes = {'A': 37, 'C': 40, 'S':18}
+
+    if figsize is None:
+        figsizes = {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
+    elif isinstance(figsize, (list,tuple)) and len(figsize) == 2:
+        figsizes = {each: figsize for each in axes}
+    else:
+        raise TypeError('figsize should be a tuple/list of size 2')
 
     if not cut_coords is None:
-        if isinstance(cut_coords, list):
+
+        if isinstance(cut_coords, Iterable):
             slices = {'A': cut_coords, 'S': cut_coords, 'C': cut_coords}
             lc = len(cut_coords)
             row_sizes = {'A': lc, 'S': lc, 'C': lc}
+            figsizes = {e: (3*lc, 3) for e in axes}
+
         elif isinstance(cut_coords, dict):
             slices = dict({e: cut_coords[e] for e in axes})
-            row_sizes = dict({e: len(cut_coords[e]) for e in axes})
-
+            row_sizes = {e: len(cut_coords[e]) for e in axes}
+            figsizes = {e: (3*len(cut_coords[e]), 3) for e in axes}
 
 
     lambdas = {'A': lambda x: data[:,:,x,:],
@@ -139,12 +150,12 @@ def __snap__(filepaths, axes=['A', 'S', 'C'], bg=None, cut_coords=None):
     pbar = tqdm(total=n_slices, leave=False)
     for each in axes:
         path, bb = snap_slices(slices[each], axis=each, row_size=row_sizes[each],
-            figsize=(fig_sizes[each], 3), func=lambdas[each], pbar=pbar)
+            figsize=figsizes.get(each, None), func=lambdas[each], pbar=pbar)
         paths[each] = path
 
         if orig:
             path = snap_slices_orig(slices[each], axis=each, row_size=row_sizes[each],
-                figsize=(fig_sizes[each], 3), func=lambdas_orig[each], bb=bb,
+                figsize=figsizes.get(each, None), func=lambdas_orig[each], bb=bb,
                 pbar=pbar)
             paths_orig[each] = path
 
@@ -156,7 +167,7 @@ def __snap__(filepaths, axes=['A', 'S', 'C'], bg=None, cut_coords=None):
 
 
 def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
-        animated=False, cut_coords=None, savefig=None):
+        animated=False, cut_coords=None, savefig=None, figsize=None):
     orig = not bg is None
     # FIXME: be careful if a file contains .gif or .png elsewhere
 
@@ -166,7 +177,8 @@ def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
 
     # Creating snapshots (along given axes and original if needed)
     log.info('* Creating snapshots...')
-    paths, paths_orig = __snap__(filepaths, axes=axes, bg=bg, cut_coords=cut_coords)
+    paths, paths_orig = __snap__(filepaths, axes=axes, bg=bg,
+        cut_coords=cut_coords, figsize=figsize)
 
     montage_cmd = 'montage -resize %sx -tile 1 -background black -geometry +0+0 %s %s'%(width, '%s', '%s')
     # Compiling images into a single one (one per axis)
@@ -282,8 +294,8 @@ def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
 
 
 
-def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30,
-        animated=False, savefig=None):
+def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, cut_coords=None,
+        animated=False, savefig=None, figsize=None):
     fp = savefig
     if savefig is None:
         if animated:
@@ -292,8 +304,8 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30,
             f, fp = tempfile.mkstemp(suffix='.png')
         os.close(f)
 
-    __plot_segment__(filepaths, axes, bg, opacity=opacity,
-        animated=animated, savefig=fp)
+    __plot_segment__(filepaths, axes=axes, bg=bg, opacity=opacity, cut_coords=cut_coords,
+        animated=animated, savefig=fp, figsize=figsize)
 
 
     if savefig is None:

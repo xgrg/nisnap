@@ -67,8 +67,8 @@ def download_resources(config, experiment_id, resource_name,  destination, raw=T
     return filepaths
 
 
-def plot_segment(config, experiment_id, savefig=None, resource_name='SPM12_SEGMENT_T2T1_COREG',
-    axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False):
+def plot_segment(config, experiment_id, savefig=None, cut_coords=None, resource_name='SPM12_SEGMENT_T2T1_COREG',
+    axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False, figsize=None):
 
     fp = savefig
     if savefig is None:
@@ -80,11 +80,13 @@ def plot_segment(config, experiment_id, savefig=None, resource_name='SPM12_SEGME
 
     dest = tempfile.gettempdir()
     # Downloading resources
-    filepaths = download_resources(config, experiment_id, resource_name, dest)
+    filepaths = download_resources(config, experiment_id, resource_name, dest,
+        raw=raw)
     bg = filepaths[0]
 
     from . import spm
-    spm.plot_segment(filepaths[1:], axes, bg, opacity, animated, savefig=fp)
+    spm.plot_segment(filepaths[1:], axes=axes, bg=bg, opacity=opacity,
+        animated=animated, savefig=fp, figsize=figsize, cut_coords=cut_coords)
 
     if savefig is None:
         # Return image
