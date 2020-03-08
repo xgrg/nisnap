@@ -121,17 +121,17 @@ def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
         raise TypeError('figsize should be a tuple/list of size 2')
 
     if not cut_coords is None:
-
-        if isinstance(cut_coords, Iterable):
+        print(cut_coords, axes)
+        if isinstance(cut_coords, dict):
+            slices = {e: list(cut_coords[e]) for e in axes}
+            row_sizes = {e: len(cut_coords[e]) for e in axes}
+            figsizes = {e: (3*len(cut_coords[e]), 3) for e in axes}
+        elif isinstance(cut_coords, Iterable):
             slices = {'A': cut_coords, 'S': cut_coords, 'C': cut_coords}
             lc = len(cut_coords)
             row_sizes = {'A': lc, 'S': lc, 'C': lc}
             figsizes = {e: (3*lc, 3) for e in axes}
 
-        elif isinstance(cut_coords, dict):
-            slices = dict({e: cut_coords[e] for e in axes})
-            row_sizes = {e: len(cut_coords[e]) for e in axes}
-            figsizes = {e: (3*len(cut_coords[e]), 3) for e in axes}
 
 
     lambdas = {'A': lambda x: data[:,:,x,:],
@@ -148,6 +148,7 @@ def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
 
     pbar = tqdm(total=n_slices, leave=False)
     for each in axes:
+        print([each, 'slices:', slices, slices[each]])
         path, bb = snap_slices(slices[each], axis=each, row_size=row_sizes[each],
             figsize=figsizes.get(each, None), func=lambdas[each], pbar=pbar)
         paths[each] = path

@@ -93,9 +93,20 @@ class RunThemAll(unittest.TestCase):
         filepaths = xnat.download_resources(config='.xnat.cfg', experiment_id='BBRCDEV_E02859',
             resource_name='SPM12_SEGMENT_T2T1_COREG3', destination='/tmp',
             raw=True)
+        nisnap.plot_segment(filepaths[1:], bg=None, axes=('A'),
+            cut_coords=range(100, 110, 2),
+            animated=False, savefig='/tmp/toto')
+        nisnap.plot_segment(filepaths[1:], bg=None, axes=('A'),
+            cut_coords={'A':range(100, 110, 2)},
+            animated=False, savefig='/tmp/toto')
         for bg in [None, filepaths[0]]:
             for animated in [True, False]:
                 for savefig in [None, '/tmp/toto']:
                     print('bg:', bg, 'animated:', animated, 'savefig:', savefig)
                     nisnap.plot_segment(filepaths[1:], bg=bg, axes=('A'),
                         animated=animated, savefig=savefig)
+
+    def test_006(self):
+        filepaths = xnat.download_resources(config='.xnat.cfg', experiment_id='BBRCDEV_E00375',
+            resource_name='FREESURFER6', destination='/tmp',
+            raw=True)
