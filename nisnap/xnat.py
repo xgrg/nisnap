@@ -84,6 +84,11 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None, resource_
         raw=raw)
     bg = filepaths[0]
 
+    if animated and not raw:
+        msg = 'animated cannot be True with raw set to False. Switching raw to True.'
+        log.warning(msg)
+        raw = True
+
     from . import spm
     spm.plot_segment(filepaths[1:], axes=axes, bg=bg, opacity=opacity,
         animated=animated, savefig=fp, figsize=figsize, cut_coords=cut_coords)
