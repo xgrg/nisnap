@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 import logging as log
 import shutil
+from collections.abc import Iterable
 
 
 def chunks(lst, n):
@@ -90,7 +91,6 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
 
 def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
         figsize=None):
-    from collections.abc import Iterable
     orig = not bg is None
     c = nib.load(filepaths[0]).dataobj.shape
 
@@ -115,7 +115,7 @@ def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
 
     if figsize is None:
         figsizes = {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
-    elif isinstance(figsize, (list,tuple)) and len(figsize) == 2:
+    elif isinstance(figsize, (list, tuple)) and len(figsize) == 2:
         figsizes = {each: figsize for each in axes}
     else:
         raise TypeError('figsize should be a tuple/list of size 2')
@@ -300,6 +300,27 @@ def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
 
 
 
+def __check_axes__(axes):
+    is_correct = True
+    curated_axes = []
+    ax_names = ('A', 'S', 'C', 'AXIAL', 'SAGITTAL', 'CORONAL')
+    if ((isinstance(axes, str) or isinstance(axes, Iterable)) \
+            and len(axes) > 0 and len(axes) < 4):
+        for e in axes:
+            if not e.upper() in ax_names:
+                is_correct = False
+            else:
+                curated_axes.append(e.upper())
+    else:
+        is_correct = False
+
+    msg = 'axes should be a single character or an Iterable with the'\
+        ' following: %s'%', '.join(ax_names)
+    if not is_correct:
+        log.warning('Axes: %s (%s)'%(axes, type(axes)))
+        raise ValueError(msg)
+    return tuple(curated_axes)
+
 
 def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, cut_coords=None,
         animated=False, savefig=None, figsize=None):
@@ -310,6 +331,8 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, cut_coords=
         else:
             f, fp = tempfile.mkstemp(suffix='.png')
         os.close(f)
+
+    axes = __check_axes__(axes)
     __plot_segment__(filepaths, axes=axes, bg=bg, opacity=opacity, cut_coords=cut_coords,
         animated=animated, savefig=fp, figsize=figsize)
 
