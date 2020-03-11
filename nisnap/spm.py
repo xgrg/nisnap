@@ -324,6 +324,48 @@ def __check_axes__(axes):
 
 def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, cut_coords=None,
         animated=False, savefig=None, figsize=None):
+    """Plots a set of segmentation maps/masks.
+
+    Parameters
+    ----------
+    filepaths: a list of str
+        Paths to segmentation maps (between 1 and 3). Must be of same dimensions
+        and in same reference space.
+
+    axes: string, or a tuple of strings
+        Choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL',
+        'SAGITTAL' or 'CORONAL', or lowercase)
+
+    bg: None or str
+        Path to the background image that the masks will be plotted on top of.
+        If nothing is specified, the segmentation maps/masks will be plotted only.
+
+        The opacity (in %) of the segmentation maps when plotted over a background
+        image. Only used if a background image is provided. Default: 10
+
+    cut_coords: None, or a tuple of floats
+        The indexes of the slices that will be rendered. If None is given, the
+        slices are selected automatically.
+
+    animated: boolean, optional
+        If True, the snapshot will be rendered as an animated GIF.
+        If False, the snapshot will be rendered as a static PNG image. Default:
+        False
+
+    savefig: string, optional
+        Filepath where the resulting snapshot will be created. If None is given,
+        a temporary file will be created and/or the result will be displayed
+        inline in a Jupyter Notebook.
+
+    figsize: None, or a 2-uple of floats
+        Sets the figure size. Default: {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
+
+
+    See Also
+    --------
+    xnat.plot_segment : To plot segmentation maps directly providing their
+        experiment_id on an XNAT instance
+    """
     fp = savefig
     if savefig is None:
         if animated:
