@@ -1,5 +1,6 @@
 import unittest
-from nisnap import parse, xnat
+from nisnap import _parse as parse
+from nisnap import xnat
 import nisnap
 
 
@@ -68,8 +69,8 @@ class RunThemAll(unittest.TestCase):
             raw=True)
         parser = parse.create_parser()
         args = '--bg /tmp/BBRCDEV_E02859_T2_T1space.nii.gz '\
-           '/tmp/BBRCDEV_E02859_c1.nii.gz /tmp/BBRCDEV_E02859_c2.nii.gz '\
-           '/tmp/BBRCDEV_E02859_c3.nii.gz -o /tmp/test.gif --axes A --opacity 30'
+           '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c1.nii.gz /tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c2.nii.gz '\
+           '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c3.nii.gz -o /tmp/test.gif --axes A --opacity 30'
         args = parser.parse_args(args.split(' '))
         parse.run(args)
 
