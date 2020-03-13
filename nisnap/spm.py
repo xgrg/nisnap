@@ -1,28 +1,27 @@
 import matplotlib
 matplotlib.use('Agg')
 
-import nibabel as nib
+
 import tempfile, os
 import numpy as np
-from matplotlib import pyplot as plt
-from tqdm import tqdm
 import logging as log
 import shutil
 from collections.abc import Iterable
 
 
-def chunks(lst, n):
+def _chunks_(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
 
-def snap_slices(slices, axis, row_size, figsize, func, pbar=None):
+def _snap_slices_(slices, axis, row_size, figsize, func, pbar=None):
+    from matplotlib import pyplot as plt
 
     paths = []
     bb = {}
 
-    for a, chunk in enumerate(chunks(slices, row_size)):
+    for a, chunk in enumerate(_chunks_(slices, row_size)):
         _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.png')
         paths.append(path)
         bb[a] = []
@@ -55,11 +54,12 @@ def snap_slices(slices, axis, row_size, figsize, func, pbar=None):
     return paths, bb
 
 
-def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
+def _snap_slices_orig_(slices, axis, row_size, figsize, func, bb, pbar=None):
+    from matplotlib import pyplot as plt
 
     paths = []
 
-    for a, chunk in enumerate(chunks(slices, row_size)):
+    for a, chunk in enumerate(_chunks_(slices, row_size)):
         _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.png')
         paths.append(path)
 
@@ -91,6 +91,9 @@ def snap_slices_orig(slices, axis, row_size, figsize, func, bb, pbar=None):
 
 def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
         figsize=None):
+    import nibabel as nib
+    from matplotlib import pyplot as plt
+    from tqdm import tqdm
     orig = not bg is None
     c = nib.load(filepaths[0]).dataobj.shape
 
@@ -147,12 +150,12 @@ def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
 
     pbar = tqdm(total=n_slices, leave=False)
     for each in axes:
-        path, bb = snap_slices(slices[each], axis=each, row_size=row_sizes[each],
+        path, bb = _snap_slices_(slices[each], axis=each, row_size=row_sizes[each],
             figsize=figsizes.get(each, None), func=lambdas[each], pbar=pbar)
         paths[each] = path
 
         if orig:
-            path = snap_slices_orig(slices[each], axis=each, row_size=row_sizes[each],
+            path = _snap_slices_orig_(slices[each], axis=each, row_size=row_sizes[each],
                 figsize=figsizes.get(each, None), func=lambdas_orig[each], bb=bb,
                 pbar=pbar)
             paths_orig[each] = path
@@ -166,6 +169,7 @@ def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
 
 def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
         animated=False, cut_coords=None, savefig=None, figsize=None):
+    from tqdm import tqdm
     orig = not bg is None
     # FIXME: be careful if a file contains .gif or .png elsewhere
 
@@ -339,7 +343,6 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, cut_coords=
     bg: None or str
         Path to the background image that the masks will be plotted on top of.
         If nothing is specified, the segmentation maps/masks will be plotted only.
-
         The opacity (in %) of the segmentation maps when plotted over a background
         image. Only used if a background image is provided. Default: 10
 
