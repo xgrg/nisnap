@@ -203,6 +203,15 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
     # Downloading resources
     filepaths = download_resources(config, experiment_id, resource_name, dest,
         raw=raw, cache=cache)
+
+    # If files missing with cache set to True, raise Exception
+    if cache:
+        for f in filepaths:
+            import os.path as op
+            if not op.isfile(f):
+                msg = 'No such file: \'%s\'. Retry with cache set to False.'%f
+                raise FileNotFoundError(msg)
+
     bg = filepaths[0]
 
     if animated and not raw:
