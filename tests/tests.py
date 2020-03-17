@@ -108,6 +108,9 @@ class RunThemAll(unittest.TestCase):
                         animated=animated, savefig=savefig)
 
     def test_006(self):
-        filepaths = xnat.download_resources(config='.xnat.cfg', experiment_id='BBRCDEV_E00375',
-            resource_name='FREESURFER6', destination='/tmp',
-            raw=True)
+        from nisnap import xnat
+        xnat.plot_segment(config='.xnat.cfg',
+            experiment_id='BBRCDEV_E02859',
+            resource_name='SPM12_SEGMENT_T2T1_COREG3',
+            axes='A', opacity=100, cut_coords=range(160,180,3),
+            animated=False, contours=True, cache=True)

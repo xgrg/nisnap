@@ -119,7 +119,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
 def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
     resource_name='SPM12_SEGMENT_T2T1_COREG',
     axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False, figsize=None,
-    cache=False):
+    contours=False, cache=False):
     """Download a given experiment/resource from an XNAT instance and create
     snapshots of this resource along a selected set of slices.
 
@@ -223,7 +223,8 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
 
     from . import spm
     spm.plot_segment(filepaths[1:], axes=axes, bg=bg, opacity=opacity,
-        animated=animated, savefig=fp, figsize=figsize, cut_coords=cut_coords)
+        animated=animated, savefig=fp, figsize=figsize, contours=contours,
+        cut_coords=cut_coords)
 
     if savefig is None:
         # Return image
