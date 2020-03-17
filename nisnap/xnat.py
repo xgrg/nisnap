@@ -208,6 +208,7 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
     if cache:
         for f in filepaths:
             import os.path as op
+            if f is None and not raw: continue
             if not op.isfile(f):
                 msg = 'No such file: \'%s\'. Retry with cache set to False.'%f
                 raise FileNotFoundError(msg)
