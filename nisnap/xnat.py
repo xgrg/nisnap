@@ -216,6 +216,7 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
 
     if animated and not raw:
         msg = 'animated cannot be True with raw set to False. Switching raw to True.'
+        import logging as log
         log.warning(msg)
         raw = True
 
