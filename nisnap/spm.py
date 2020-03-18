@@ -1,12 +1,16 @@
 import matplotlib
 matplotlib.use('Agg')
-
+from matplotlib import pyplot as plt
 
 import tempfile, os
 import numpy as np
 import logging as log
 import shutil
 from collections.abc import Iterable
+from tqdm import tqdm
+import numpy as np
+from matplotlib.colors import ListedColormap
+from matplotlib import cm, colors
 
 
 def _chunks_(lst, n):
@@ -14,24 +18,39 @@ def _chunks_(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def aget_cmap():
-    import numpy as np
-    LUT = {0: [0,   0,   0],
-           1: [70,  130, 180],
-           2: [205, 62,  78],
-           3: [245, 245, 245]}
-    LUT = [LUT[i] for i in range(0, 4)]
+def aget_cmap(n_labels=None):
+    LUT = {0:  [0,   0,   0],
+           1:  [70,  130, 180],
+           2:  [205, 62,  78],
+           3:  [245, 245, 245],
+           4:  [120, 18,  134],
+           5:  [196, 58,  250],
+           6:  [0,   148, 0],
+           7:  [220, 248, 164],
+           8:  [230, 148, 34],
+           9:  [0,   118, 14],
+           10: [0,   118, 14],
+           11: [122, 186, 220],
+           12: [236, 13,  176],
+           13: [12,  48,  255],
+           14: [204, 182, 142],
+           15: [42,  204, 164],
+           16: [119, 159, 176]}
+
+    if n_labels is None:
+        n_labels = len(list(LUT.keys()))
+    LUT = [LUT[i] for i in range(0, n_labels+1)]
     LUT = np.array(LUT)
     LUT = LUT / 255.0
     return LUT
 
-def plot_contours_in_slice(slice_seg, target_axis):
+def plot_contours_in_slice(slice_seg, target_axis, n_labels=None):
     """Plots contour around the data in slice (after binarization)"""
-    from matplotlib.colors import ListedColormap
-    from matplotlib import cm, colors, pyplot as plt
 
-    LUT = aget_cmap()
-    cmap = ListedColormap(LUT)
+    if n_labels is None: # if n_labels is not provided then take max from slice
+        n_labels = int(np.max(slice_seg))
+
+    cmap = ListedColormap(aget_cmap(n_labels))
 
     num_labels = len(cmap.colors)
     unique_labels = np.arange(num_labels, dtype='int16')
@@ -42,8 +61,6 @@ def plot_contours_in_slice(slice_seg, target_axis):
     color_for_label = seg_mapper.to_rgba(unique_labels_display)
 
     plt.sca(target_axis)
-    contour_handles = list()
-    alpha_seg = 0.7
 
     for index, label in enumerate(unique_labels_display):
         binary_slice_seg = slice_seg == index
@@ -53,19 +70,22 @@ def plot_contours_in_slice(slice_seg, target_axis):
                             levels=[0.5,],
                             colors=(color_for_label[index],),
                             linewidths=1,
-                            alpha=alpha_seg,
+                            alpha=1,
                             zorder=1)
-        contour_handles.append(ctr_h)
 
-    return contour_handles
+    return
 
-def _snap_contours_(slices, axis, row_size, figsize, segm, bg, pbar=None):
-    from matplotlib import pyplot as plt
+def _snap_contours_(slices, axis, row_size, figsize, data, bg, pbar=None):
     plt.style.use('dark_background')
-
 
     paths = []
     bb = {}
+
+    lambdas = {'A': lambda y,x: y[:,:,x],
+               'C': lambda y,x: y[:,x,:],
+               'S': lambda y,x: y[x,:,:]}
+
+    n_labels = int(np.max(data))
 
     for a, chunk in enumerate(_chunks_(slices, row_size)):
         _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.png')
@@ -76,98 +96,19 @@ def _snap_contours_(slices, axis, row_size, figsize, segm, bg, pbar=None):
 
         for i, slice_index in enumerate(chunk):
             ax = fig.add_subplot(1, len(chunk), i+1, label='slice_%s'%slice_index)
-            test = np.flip(np.swapaxes(np.abs(segm(int(slice_index))), 0, 1), 0)
-            xs, ys, zs = np.where(test!=0)
+            test = np.flip(np.swapaxes(np.abs(lambdas[axis](data, int(slice_index))), 0, 1), 0)
+            xs, ys = np.where(test!=0)
 
-            bb[a].append((xs, ys, zs))
+            bb[a].append((xs, ys))
             if len(xs) == 0: continue
 
-            test3 = np.flip(np.swapaxes(np.abs(bg(int(slice_index))), 0, 1), 0)
+            test3 = np.flip(np.swapaxes(np.abs(lambdas[axis](bg, int(slice_index))), 0, 1), 0)
             test3 = test3[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
             ax.imshow(test3, interpolation='none', cmap='gray')
 
-            test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1, :]
-            test2 = np.argmax(test, axis=-1) + 1
-            black_pixels_mask = np.all(test == [0, 0, 0], axis=-1)
-            test2[black_pixels_mask] = 0
-            plot_contours_in_slice(test2, ax)
-
-            ax.axis('off')
-
-            ax.text(0, 0, '%i' %slice_index,
-                {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
-
-
-            if not pbar is None:
-                pbar.update(1)
-
-        fig.savefig(path, facecolor=fig.get_facecolor(),
-                bbox_inches='tight',
-                transparent=True,
-                pad_inches=0)
-    return paths, bb
-
-
-def _snap_slices_(slices, axis, row_size, figsize, func, pbar=None):
-    from matplotlib import pyplot as plt
-
-    paths = []
-    bb = {}
-
-    for a, chunk in enumerate(_chunks_(slices, row_size)):
-        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.png')
-        paths.append(path)
-        bb[a] = []
-
-        fig = plt.figure(dpi=300, figsize=figsize)
-
-        for i, slice_index in enumerate(chunk):
-            ax = fig.add_subplot(1, len(chunk), i+1, label='slice_%s'%slice_index)
-            test = np.flip(np.swapaxes(np.abs(func(int(slice_index))), 0, 1), 0)
-            xs, ys, zs = np.where(test!=0)
-            bb[a].append((xs, ys, zs))
-
-            if len(xs) == 0: continue
-            test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1, :]
-
-            ax.imshow((test * 255).astype(np.uint8), interpolation='none', )
-            ax.axis('off')
-
-            ax.text(0, 0, '%i' %slice_index,
-                {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
-
-
-            if not pbar is None:
-                pbar.update(1)
-
-        fig.savefig(path, facecolor=fig.get_facecolor(),
-                bbox_inches='tight',
-                transparent=True,
-                pad_inches=0)
-    return paths, bb
-
-
-def _snap_slices_orig_(slices, axis, row_size, figsize, func, bb, pbar=None):
-    from matplotlib import pyplot as plt
-    plt.style.use('dark_background')
-
-
-    paths = []
-
-    for a, chunk in enumerate(_chunks_(slices, row_size)):
-        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.png')
-        paths.append(path)
-
-        fig = plt.figure(dpi=300, figsize=figsize)
-        for i, slice_index in enumerate(chunk):
-            ax = fig.add_subplot(1, len(chunk), i+1, label='slice_%s'%slice_index)
-            test = np.flip(np.swapaxes(np.abs(func(int(slice_index))), 0, 1), 0)
-            xs, ys, zs = bb[a][i]
-
-            if len(xs) == 0: continue
             test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
 
-            ax.imshow(test, interpolation='none', cmap='gray')
+            plot_contours_in_slice(test, ax, n_labels = n_labels)
             ax.axis('off')
 
             ax.text(0, 0, '%i' %slice_index,
@@ -180,31 +121,82 @@ def _snap_slices_orig_(slices, axis, row_size, figsize, func, bb, pbar=None):
                 bbox_inches='tight',
                 transparent=True,
                 pad_inches=0)
-    return paths
+    return paths, bb
+
+
+def _snap_slices_(data, slices, axis, row_size, figsize, bb=None, pbar=None):
+    has_orig = not bb is None
+
+    paths = []
+    n_labels = int(np.max(data))
+    if not has_orig:
+        bb = {}
+
+    if len(data.shape) == 4: # RGB mode
+        lambdas = {'A': lambda x: data[:,:,x,:],
+                   'C': lambda x: data[:,x,:,:],
+                   'S': lambda x: data[x,:,:,:]}
+    else: # standard label volume
+        lambdas = {'A': lambda x: data[:,:,x],
+                   'C': lambda x: data[:,x,:],
+                   'S': lambda x: data[x,:,:]}
+
+    for a, chunk in enumerate(_chunks_(slices, row_size)):
+        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix='.png')
+        paths.append(path)
+
+        if not has_orig:
+            bb[a] = []
+
+        fig = plt.figure(dpi=300, figsize=figsize)
+
+        for i, slice_index in enumerate(chunk):
+
+            ax = fig.add_subplot(1, len(chunk), i+1, label='slice_%s'%slice_index)
+            test = np.flip(np.swapaxes(np.abs(lambdas[axis](int(slice_index))), 0, 1), 0)
+            if not has_orig:
+                xs, ys = np.where(test!=0)
+                bb[a].append((xs, ys))
+            else:
+                xs, ys = bb[a][i]
+
+            if len(xs) == 0: continue
+            if len(data.shape) == 4:
+                test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1, :]
+                ax.imshow((test * 255).astype(np.uint8), interpolation='none', )
+            else:
+                if has_orig:
+                    cmap = 'gray'
+                else:
+                    cmap = ListedColormap(aget_cmap(n_labels))
+
+                test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
+                ax.imshow(test, interpolation='none', cmap=cmap)
+
+            ax.axis('off')
+            ax.text(0, 0, '%i' %slice_index,
+                {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
+
+            if not pbar is None:
+                pbar.update(1)
+
+        fig.savefig(path, facecolor=fig.get_facecolor(),
+                bbox_inches='tight', transparent=True, pad_inches=0)
+    return paths, bb
 
 
 
-def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
+
+def __snap__(data, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
         contours=False, figsize=None):
-    import nibabel as nib
-    from matplotlib import pyplot as plt
-    from tqdm import tqdm
-    orig = not bg is None
-    c = nib.load(filepaths[0]).dataobj.shape
 
-    stack = [np.asarray(nib.load(e).dataobj) for e in filepaths[:]]
-    while len(stack) < 3:
-        stack.append(np.zeros(c))
-
-    data = np.stack(stack, axis=-1)
-    if orig:
-        orig_data = np.asarray(nib.load(bg).dataobj)
+    has_orig = not bg is None
 
     plt.rcParams['figure.facecolor'] = 'black'
     plt.rcParams.update({'figure.max_open_warning': 0})
 
-    paths = {}
-    paths_orig = {}
+    paths, paths_orig = {}, {}
+
     slices = {'A': list(range(100, data.shape[2] - 60, 3)),
         'C': list(range(50, data.shape[1] - 70, 3)),
         'S': list(range(90, data.shape[0] - 90, 1))}
@@ -229,18 +221,8 @@ def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
             row_sizes = {'A': lc, 'S': lc, 'C': lc}
             figsizes = {e: (3*lc, 3) for e in axes}
 
-
-
-    lambdas = {'A': lambda x: data[:,:,x,:],
-               'C': lambda x: data[:,x,:,:],
-               'S': lambda x: data[x,:,:,:]}
-
-    lambdas_orig = {'A': lambda x: orig_data[:,:,x],
-               'C': lambda x: orig_data[:,x,:],
-               'S': lambda x: orig_data[x,:,:]}
-
     n_slices = sum([len(slices[e]) for e in axes])
-    if orig:
+    if has_orig:
         n_slices = 2 * n_slices
 
     pbar = tqdm(total=n_slices, leave=False)
@@ -248,19 +230,19 @@ def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
         if contours:
             # Rendering contours
             path, bb = _snap_contours_(slices[each], axis=each, row_size=row_sizes[each],
-                figsize=figsizes.get(each, None), segm=lambdas[each],
-                bg=lambdas_orig[each], pbar=pbar)
+                figsize=figsizes.get(each, None), data=data,
+                bg=bg, pbar=pbar)
             paths[each] = path
 
         else:
             # Rendering RGB maps
-            path, bb = _snap_slices_(slices[each], axis=each, row_size=row_sizes[each],
-                figsize=figsizes.get(each, None), func=lambdas[each], pbar=pbar)
+            path, bb = _snap_slices_(data, slices[each], axis=each, row_size=row_sizes[each],
+                figsize=figsizes.get(each, None), bb=None, pbar=pbar)
             paths[each] = path
 
-        if orig:
-            path = _snap_slices_orig_(slices[each], axis=each, row_size=row_sizes[each],
-                figsize=figsizes.get(each, None), func=lambdas_orig[each], bb=bb,
+        if has_orig:
+            path, _ = _snap_slices_(bg, slices[each], axis=each, row_size=row_sizes[each],
+                figsize=figsizes.get(each, None), bb=bb,
                 pbar=pbar)
             paths_orig[each] = path
 
@@ -269,14 +251,21 @@ def __snap__(filepaths, axes=('A', 'S', 'C'), bg=None, cut_coords=None,
     return paths, paths_orig
 
 
+def __stack_img__(filepaths):
+    import nibabel as nib
+    stack = [np.asarray(nib.load(e).dataobj) for e in filepaths[:]]
 
+    data = np.stack(stack, axis=-1)
+
+    data2 = np.argmax(data, axis=-1) + 1
+    black_pixels_mask = np.all(data == [0, 0, 0], axis=-1)
+    data2[black_pixels_mask] = 0
+    return data2
 
 def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
         animated=False, cut_coords=None, savefig=None, contours=False,
         figsize=None):
-    from tqdm import tqdm
-    orig = not bg is None
-    # FIXME: be careful if a file contains .gif or .png elsewhere
+    has_orig = not bg is None
 
     width = 2000
     f, fp = tempfile.mkstemp(suffix='.png')
@@ -284,7 +273,18 @@ def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
 
     # Creating snapshots (along given axes and original if needed)
     log.info('* Creating snapshots...')
-    paths, paths_orig = __snap__(filepaths, axes=axes, bg=bg,
+
+    # Loading images
+
+    import nibabel as nib
+    if isinstance(filepaths, list):
+        data = __stack_img__(filepaths)
+    elif isinstance(filepaths, str):
+        data = np.asarray(nib.load(filepaths).dataobj)
+    if bg is not None:
+        bg = np.asarray(nib.load(bg).dataobj)
+
+    paths, paths_orig = __snap__(data, axes=axes, bg=bg,
         cut_coords=cut_coords, contours=contours, figsize=figsize)
 
     montage_cmd = 'montage -resize %sx -tile 1 -background black -geometry +0+0 %s %s'%(width, '%s', '%s')
@@ -298,61 +298,60 @@ def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
 
     # Create one image with the selected axes
 
-    cmd = montage_cmd%(' '.join([fp.replace('.png', '_%s.png'%each) for each in axes]), fp)
+    import os.path as op
+    cmd = montage_cmd%(' '.join([fp[:-4] + '_%s.png'%each for each in axes]), fp)
     log.debug(cmd)
     os.system(cmd)
-    import os.path as op
-    log.debug([fp.replace('.png', '_%s.png'%each) for each in axes])
-    log.debug([op.isfile(fp.replace('.png', '_%s.png'%each)) for each in axes])
+    log.debug([fp[:-4] + '_%s.png'%each for each in axes])
+    log.debug([op.isfile(fp[:-4] + '_%s.png'%each) for each in axes])
     #log.info('Saved in %s'%fp)
     for each in axes:
-        fp1 = fp.replace('.png', '_%s.png'%each)
+        fp1 = fp[:-4] + '_%s.png'%each
         if op.isfile(fp1):
             os.unlink(fp1)
         else:
             from glob import glob
             log.warning('%s not found. %s'%(fp1, glob('/tmp/tmp*.png')))
 
-    if orig:
+    if has_orig:
         # Repeat the process (montage) with the "raw" snapshots
         for each in axes:
-            cmd = montage_cmd%(' '.join(paths_orig[each]), fp.replace('.png', '_orig_%s.png'%each))
+            cmd = montage_cmd%(' '.join(paths_orig[each]), fp[:-4] + '_orig_%s.png'%each)
             log.debug(cmd)
             os.system(cmd)
             for e in paths_orig[each]:
                 os.unlink(e)
 
         # Create one image with the selected axes
-        cmd = montage_cmd%(' '.join([fp.replace('.png', '_orig_%s.png'%each) for each in axes]),
-                fp.replace('.png', '_orig.png'))
+        cmd = montage_cmd%(' '.join([fp[:-4] + '_orig_%s.png'%each for each in axes]),
+                fp[:-4] + '_orig.png')
         log.debug(cmd)
         os.system(cmd)
         #log.info('Saved in %s'%fp.replace('.png', '_orig.png'))
         for each in axes:
-            #os.unlink(fp.replace('.png', '_orig_%s.png'%each))
-            pass
+            os.unlink(fp[:-4] + '_orig_%s.png'%each)
 
 
     # At this point there should be two images max. (segmentation and raw image)
     composite_cmd = 'composite -dissolve %s -gravity Center %s %s -alpha Set %s'
 
-    if orig:
+    if has_orig:
         if animated: # will generate a .gif
 
             # Fading from raw data to segmentation
             l = list(range(0, opacity, int(opacity/10.0)))
             pbar = tqdm(total=2*len(l), leave=False)
             for i, opac in enumerate(l):
-                cmd = composite_cmd %(opac, fp, fp.replace('.png', '_orig.png'),
-                        fp.replace('.png', '_fusion_%03d.png'%i))
+                cmd = composite_cmd %(opac, fp, fp[:-4] + '_orig.png',
+                        fp[:-4] + '_fusion_%03d.png'%i)
                 log.debug(cmd)
                 os.system(cmd)
                 pbar.update(1)
 
             # From segmentation to raw data
             for i, opac in enumerate(l):
-                cmd = composite_cmd %(opacity - opac, fp, fp.replace('.png', '_orig.png'),
-                        fp.replace('.png', '_fusion_%03d.png'%(len(l)+i)))
+                cmd = composite_cmd %(opacity - opac, fp, fp[:-4] + '_orig.png',
+                        fp[:-4] + '_fusion_%03d.png'%(len(l)+i))
                 log.debug(cmd)
                 os.system(cmd)
                 pbar.update(1)
@@ -363,10 +362,10 @@ def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
             # Collect frames and create gif
             filepaths = []
             for i, opac in enumerate(range(0, 2 * opacity, int(opacity/10.0))):
-                filepaths.append(fp.replace('.png', '_fusion_%03d.png'%i))
+                filepaths.append(fp[:-4] + '_fusion_%03d.png'%i)
 
             cmd = 'convert -delay 0 -loop 0 %s %s'\
-                %(' '.join(filepaths), fp.replace('.png', '.gif'))
+                %(' '.join(filepaths), fp[:-4] + '.gif')
             log.debug(cmd)
             os.system(cmd)
             #log.info('Saved in %s'%fp.replace('.png', '.gif'))
@@ -375,32 +374,32 @@ def __plot_segment__(filepaths, axes=('A','C','S'), bg=None, opacity=30,
             for each in filepaths:
                 os.unlink(each)
             os.unlink(fp)
-            os.unlink(fp.replace('.png', '_orig.png'))
+            os.unlink(fp[:-4] + '_orig.png')
 
         else:
             # Blends the two images (segmentation and original) into a composite one
-            cmd = composite_cmd %(opacity, fp, fp.replace('.png', '_orig.png'),
-                    fp.replace('.png', '_fusion.png'))
+            cmd = composite_cmd %(opacity, fp, fp[:-4] + '_orig.png',
+                    fp[:-4] + '_fusion.png')
             log.debug(cmd)
             os.system(cmd)
 
             os.unlink(fp)
-            os.unlink(fp.replace('.png', '_orig.png'))
+            os.unlink(fp[:-4] + '_orig.png')
 
     # Cleaning and saving files in right location
 
-    if orig:
+    if has_orig:
         if animated:
             if not savefig is None:
-                shutil.move(fp.replace('.png', '.gif'), savefig)
+                shutil.move(fp[:-4] + '.gif', savefig)
                 log.info('Saved in %s'%savefig)
 
         else:
             if not savefig is None:
-                shutil.move(fp.replace('.png', '_fusion.png'), savefig)
+                shutil.move(fp[:-4] + '_fusion.png', savefig)
                 log.info('Saved in %s'%fp)
             else:
-                shutil.move(fp.replace('.png', '_fusion.png'), fp)
+                shutil.move(fp[:-4] + '_fusion.png', fp)
                 log.info('Saved in %s'%fp)
 
     else:
@@ -465,6 +464,10 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, cut_coords=
         Filepath where the resulting snapshot will be created. If None is given,
         a temporary file will be created and/or the result will be displayed
         inline in a Jupyter Notebook.
+
+    contours: boolean, optional
+        If True, segmentations will be rendered as contoured regions. If False,
+        will be rendered as superimposed masks. Default: False
 
     figsize: None, or a 2-uple of floats
         Sets the figure size. Default: {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
