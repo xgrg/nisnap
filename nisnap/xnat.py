@@ -170,6 +170,10 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
         Path to the background image that the masks will be plotted on top of.
         If nothing is specified, the segmentation maps/masks will be plotted only.
 
+    contours: boolean, optional
+        If True, segmentations will be rendered as contoured regions. If False,
+        will be rendered as superimposed masks. Default: False
+
     cache: boolean, optional
         If False, resources will be normally downloaded from XNAT. If True,
         download will be skipped and data will be looked up locally.
