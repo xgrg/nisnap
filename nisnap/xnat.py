@@ -104,15 +104,25 @@ def download_resources(config, experiment_id, resource_name,  destination,
                 c.get(fp)
             filepaths.append(fp)
 
-    elif 'FREESURFER6' in resource_name:
-        r = e.resource(resource_name)
+    # elif 'FREESURFER6' in resource_name:
+    #     r = e.resource(resource_name)
+    #
+    #     for each in ['orig.mgz', 'aparc+aseg.mgz']:
+    #         c = list(r.files('*%s'%each))[0]
+    #         fp = op.join(destination, '%s_%s'%(experiment_id, each))
+    #         if not cache:
+    #             c.get(fp)
+    #         filepaths.append(fp)
 
-        for each in ['orig.mgz', 'aparc+aseg.mgz']:
-            c = list(r.files('*%s'%each))[0]
-            fp = op.join(destination, '%s_%s'%(experiment_id, each))
-            if not cache:
-                c.get(fp)
-            filepaths.append(fp)
+    #elif resource_name == 'ASHS':
+    #   r = e.resource(resource_name)
+        #     for each in ['tse.nii.gz', '*_left_lfseg_corr_nogray.nii.gz']:
+        #         c = list(r.files('*%s'%each))[0]
+        #         fp = op.join(destination, '%s_%s'%(experiment_id, each))
+        #         if not cache:
+        #             c.get(fp)
+        #         filepaths.append(fp)
+
     return filepaths
 
 
