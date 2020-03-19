@@ -7,7 +7,8 @@ def create_parser():
         'from an XNAT instance or passed as arguments.\n'
 
     desc = desc + '\nnisnap is distributed in the hope that it will be useful, '\
-     'but WITHOUT ANY WARRANTY. \nSubmit issues/comments/PR at http://gitlab.com/xgrg/nisnap.\n\n'\
+     'but WITHOUT ANY WARRANTY. \nSubmit issues/comments/PR at '\
+     'http://gitlab.com/xgrg/nisnap.\n\n'\
      'Author: Greg Operto - BarcelonaBeta Brain Research Center (2020)'
     parser = argparse.ArgumentParser(description=desc,
         formatter_class=RawTextHelpFormatter)
@@ -15,13 +16,13 @@ def create_parser():
         help = 'background image on which segmentations will be plotted.')
     parser.add_argument('--axes', required=False, default='ACS',
         help = "choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL',"\
-            "'SAGITTAL' or 'CORONAL', or lowercase")
+            "'SAGITTAL' or 'CORONAL', or lowercase)")
     parser.add_argument('--opacity', required=False, type=int,
         help = 'opacity (in %%) of the segmentation maps when plotted over a background '\
         'image. Only used if a background image is provided.')
     parser.add_argument('-o', '--output', required=False,
         help='snapshot will be stored in this file. If extension is .gif, snapshot'\
-            'will be rendered as an animation.') #, type=argparse.FileType('w'))
+            ' will be rendered as an animation.') #, type=argparse.FileType('w'))
     parser.add_argument('--config', required=False, type=argparse.FileType('r'),
         help = '[XNAT mode] XNAT configuration file')
     parser.add_argument('--nobg', required=False, action='store_true',
@@ -39,9 +40,33 @@ def create_parser():
     parser.add_argument('--verbose', required=False, action='store_true',
         default=False)
     parser.add_argument('files', nargs='*', type=argparse.FileType('r'),
-        help='segmentation maps to create snapshots from (not in XNAT mode)')
+        help='segmentation map(s) to create snapshots from (not XNAT mode)')
 
     return parser
+
+
+def __check_axes__(axes):
+    import logging as log
+    from collections.abc import Iterable
+    is_correct = True
+    curated_axes = []
+    ax_names = ('A', 'S', 'C', 'AXIAL', 'SAGITTAL', 'CORONAL')
+    if ((isinstance(axes, str) or isinstance(axes, Iterable)) \
+            and len(axes) > 0 and len(axes) < 4):
+        for e in axes:
+            if not e.upper() in ax_names:
+                is_correct = False
+            else:
+                curated_axes.append(e.upper())
+    else:
+        is_correct = False
+
+    msg = 'axes should be a single character or an Iterable with the'\
+        ' following: %s'%', '.join(ax_names)
+    if not is_correct:
+        log.warning('Axes: %s (%s)'%(axes, type(axes)))
+        raise ValueError(msg)
+    return tuple(curated_axes)
 
 def check_logic(args):
     '''Some arguments/options are not compatible, or required jointly. This
@@ -110,7 +135,11 @@ def run(args):
             opacity=args.opacity, animated=args.output.endswith('.gif'),
             cache=args.cache)
     else:
-        from . import spm
-        spm.plot_segment([e.name for e in args.files], axes=axes,
+        from . import snap
+
+        fp = args.files[0].name if len(args.files) == 1 \
+            else [e.name for e in args.files]
+
+        snap.plot_segment(fp, axes=axes,
             bg=args.bg.name, opacity=args.opacity,
             animated=args.output.endswith('.gif'), savefig=args.output)

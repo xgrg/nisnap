@@ -114,22 +114,22 @@ def download_resources(config, experiment_id, resource_name,  destination,
     #             c.get(fp)
     #         filepaths.append(fp)
 
-    #elif resource_name == 'ASHS':
-    #   r = e.resource(resource_name)
-        #     for each in ['tse.nii.gz', '*_left_lfseg_corr_nogray.nii.gz']:
-        #         c = list(r.files('*%s'%each))[0]
-        #         fp = op.join(destination, '%s_%s'%(experiment_id, each))
-        #         if not cache:
-        #             c.get(fp)
-        #         filepaths.append(fp)
+    elif resource_name == 'ASHS':
+        r = e.resource(resource_name)
+        for each in ['tse.nii.gz', 'left_lfseg_corr_nogray.nii.gz']:
+            c = list(r.files('*%s'%each))[0]
+            fp = op.join(destination, '%s_%s_%s'%(experiment_id, resource_name, each))
+            if not cache:
+                c.get(fp)
+            filepaths.append(fp)
 
     return filepaths
 
 
-def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
+def plot_segment(config, experiment_id, savefig=None, slices=None,
     resource_name='SPM12_SEGMENT_T2T1_COREG',
-    axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False, figsize=None,
-    contours=False, cache=False):
+    axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False, rowsize=None,
+    figsize=None, width=2000, contours=False, cache=False):
     """Download a given experiment/resource from an XNAT instance and create
     snapshots of this resource along a selected set of slices.
 
@@ -147,7 +147,7 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
         a temporary file will be created and/or the result will be displayed
         inline in a Jupyter Notebook.
 
-    cut_coords: None, or a tuple of floats
+    slices: None, or a tuple of floats
         The indexes of the slices that will be rendered. If None is given, the
         slices are selected automatically.
 
@@ -173,12 +173,16 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
         If False, the snapshot will be rendered as a static PNG image. Default:
         False
 
-    figsize: None, or a 2-uple of floats
-        Sets the figure size. Default: {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
+    rowsize: None, or int, or dict
+        Set the number of slices per row in the final compiled figure.
+        Default: {'A': 9, 'C': 9, 'S': 6}
 
-    bg: None or str
-        Path to the background image that the masks will be plotted on top of.
-        If nothing is specified, the segmentation maps/masks will be plotted only.
+    figsize: None, or a 2-uple of floats, or dict
+        Sets the dimensions of one row of slices.
+        Default: {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
+
+    width: int, optional
+        Width (in px) of the final compiled figure. Default: 2000.
 
     contours: boolean, optional
         If True, segmentations will be rendered as contoured regions. If False,
@@ -210,7 +214,8 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
         if animated:
             f, fp = tempfile.mkstemp(suffix='.gif')
         else:
-            f, fp = tempfile.mkstemp(suffix='.png')
+            from nisnap.snap import format
+            f, fp = tempfile.mkstemp(suffix=format)
         os.close(f)
 
     dest = tempfile.gettempdir()
@@ -235,10 +240,12 @@ def plot_segment(config, experiment_id, savefig=None, cut_coords=None,
         log.warning(msg)
         raw = True
 
-    from . import spm
-    spm.plot_segment(filepaths[1:], axes=axes, bg=bg, opacity=opacity,
+    from . import snap
+
+    filepaths = filepaths[1] if len(filepaths) == 2 else filepaths[1:]
+    snap.plot_segment(filepaths, axes=axes, bg=bg, opacity=opacity,
         animated=animated, savefig=fp, figsize=figsize, contours=contours,
-        cut_coords=cut_coords)
+        rowsize=rowsize, slices=slices)
 
     if savefig is None:
         # Return image
