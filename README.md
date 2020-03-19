@@ -13,6 +13,9 @@ Inspired by tools like [nilearn](https://nilearn.github.io/),
 
 ![example](https://gitlab.com/xgrg/nisnap/raw/master/doc/nisnap.gif)
 
+![example](https://gitlab.com/xgrg/nisnap/raw/master/doc/nisnap2.gif)
+
+
 ## Usage
 
 #### From a Terminal:
