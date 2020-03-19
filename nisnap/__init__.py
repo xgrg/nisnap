@@ -1,4 +1,4 @@
-__version__ = '0.1.post0'
+__version__ = '0.2'
 
 from nisnap import snap
 from nisnap import xnat
