@@ -16,6 +16,8 @@ Inspired by tools like [nilearn](https://nilearn.github.io/),
 ![example](https://gitlab.com/xgrg/nisnap/raw/master/doc/nisnap2.gif)
 
 
+
+
 ## Usage
 
 #### From a Terminal:
@@ -135,7 +137,7 @@ Example:
 ```python
 from nisnap import xnat
 xnat.plot_segment(config='/home/grg/.xnat.cfg', experiment_id='BBRC_E000',
-  raw=True, opacity=30, axes=('A'), cut_coords=range(100,120,2), animated=True)
+  raw=True, opacity=30, axes=('A'), slices=range(100,120,2), animated=True)
 ```
 
 #### Reference:

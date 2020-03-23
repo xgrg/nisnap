@@ -71,6 +71,9 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
     plt.style.use('dark_background')
 
     paths = []
+    _, path = tempfile.mkstemp(suffix='_%s%s'%(axis, format))
+    paths.append(path)
+
     bb = {}
 
     lambdas = {'A': lambda y,x: y[:,:,x],
@@ -79,15 +82,23 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
 
     n_labels = int(np.max(data))
 
+
+    ratio = {'A': float(data.shape[0]/data.shape[1]),
+        'C': float(data.shape[0]/data.shape[2]),
+        'S': float(data.shape[1]/data.shape[2])}[axis]
+
+    figsize = (figsize, int(figsize*ratio))
+    fig = plt.figure(dpi=300, figsize=figsize)
+
+    abs_index = 0
     for a, chunk in enumerate(slices):
-        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix=format)
-        paths.append(path)
         bb[a] = []
 
-        fig = plt.figure(dpi=300, figsize=figsize)
-
         for i, slice_index in enumerate(chunk):
-            ax = fig.add_subplot(1, len(chunk), i+1, label='slice_%s'%slice_index)
+            abs_index += 1
+
+            ax = fig.add_subplot(len(slices), len(slices[0]), abs_index,
+                    label='%s_%s'%(axis, slice_index))
             test = np.flip(np.swapaxes(np.abs(lambdas[axis](data, int(slice_index))), 0, 1), 0)
             xs, ys = np.where(test!=0)
 
@@ -109,10 +120,10 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
             if not pbar is None:
                 pbar.update(1)
 
-        fig.savefig(path, facecolor=fig.get_facecolor(),
-                bbox_inches='tight',
-                transparent=True,
-                pad_inches=0)
+    fig.savefig(path, facecolor=fig.get_facecolor(),
+            bbox_inches='tight',
+            transparent=True,
+            pad_inches=0)
     return paths, bb
 
 
@@ -133,18 +144,25 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                    'C': lambda x: data[:,x,:],
                    'S': lambda x: data[x,:,:]}
 
+    test = np.flip(np.swapaxes(np.abs(lambdas[axis](0)), 0, 1), 0)
+    ratio = test.shape[1]/float(test.shape[0])
+    figsize = (figsize, figsize/ratio)
+
+    fig = plt.figure(dpi=300, figsize=figsize)
+    _, path = tempfile.mkstemp(suffix='_%s%s'%(axis, format))
+    paths.append(path)
+
+    abs_index = 0
     for a, chunk in enumerate(slices):
-        _, path = tempfile.mkstemp(prefix='%s%s_'%(axis, a), suffix=format)
-        paths.append(path)
 
         if not has_orig:
             bb[a] = []
 
-        fig = plt.figure(dpi=300, figsize=figsize)
-
         for i, slice_index in enumerate(chunk):
+            abs_index += 1
+            ax = fig.add_subplot(len(slices), len(slices[0]), abs_index,
+                    label='%s_%s'%(axis, slice_index))
 
-            ax = fig.add_subplot(1, len(chunk), i+1, label='slice_%s'%slice_index)
             test = np.flip(np.swapaxes(np.abs(lambdas[axis](int(slice_index))), 0, 1), 0)
             if not has_orig:
                 xs, ys = np.where(test!=0)
@@ -174,8 +192,8 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
             if not pbar is None:
                 pbar.update(1)
 
-        fig.savefig(path, facecolor=fig.get_facecolor(),
-                bbox_inches='tight', transparent=True, pad_inches=0)
+    fig.savefig(path, facecolor=fig.get_facecolor(),
+            bbox_inches='tight', transparent=True, pad_inches=0)
     return paths, bb
 
 
@@ -187,9 +205,9 @@ def __snap__(data, axes=('A', 'S', 'C'), bg=None, slices=None, rowsize=None,
     plt.rcParams['figure.facecolor'] = 'black'
     plt.rcParams.update({'figure.max_open_warning': 0})
 
-    from nisnap._slices import cut_slices, _fix_figsize_, _fix_rowsize_, __maxsize__
+    from nisnap._slices import cut_slices, _fix_rowsize_, __maxsize__
     rowsize = _fix_rowsize_(axes, rowsize)
-    figsize = _fix_figsize_(axes, figsize)
+
     t = int(__maxsize__(data)/3.0)
     slices = cut_slices(data, axes, slices=slices, rowsize=rowsize,
         threshold=t)
@@ -209,20 +227,20 @@ def __snap__(data, axes=('A', 'S', 'C'), bg=None, slices=None, rowsize=None,
         if contours:
             # Rendering contours
             path, bb = _snap_contours_(data,
-                slices[each], axis=each, bg=bg, figsize=figsize[each],
+                slices[each], axis=each, bg=bg, figsize=figsize, #figsize[each],
                 pbar=pbar)
             paths[each] = path
 
         else:
             # Rendering masks
             path, bb = _snap_slices_(data,
-                slices[each], axis=each, bb=None, figsize=figsize[each],
+                slices[each], axis=each, bb=None, figsize=figsize, #figsize[each],
                 pbar=pbar)
             paths[each] = path
 
         if has_orig:
             path, _ = _snap_slices_(bg,
-                slices[each], axis=each, bb=bb, figsize=figsize[each],
+                slices[each], axis=each, bb=bb, figsize=figsize, #figsize[each],
                 pbar=pbar)
             paths_orig[each] = path
 
@@ -245,7 +263,7 @@ def __stack_img__(filepaths):
 
 def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None,
         animated=False, savefig=None, contours=False, rowsize=None,
-        figsize=None, width=2000):
+        figsize=10):
     """Plots a set of segmentation maps/masks.
 
     Parameters
@@ -286,12 +304,10 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None
         Set the number of slices per row in the final compiled figure.
         Default: {'A': 9, 'C': 9, 'S': 6}
 
-    figsize: None, or a 2-uple of floats, or dict
-        Sets the dimensions of one row of slices.
-        Default: {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
-
-    width: int, optional
-        Width (in px) of the final compiled figure. Default: 2000.
+    figsize: None, or float
+        Figure width (in inches) (matplotlib definition). Ratio will be
+        derived from slice aspect.
+        Default: 10
 
 
     See Also
@@ -324,12 +340,11 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None
         bg = np.asarray(nib.load(bg).dataobj)
 
     paths, paths_orig = __snap__(data, axes=axes, bg=bg,
-        slices=slices, contours=contours, rowsize=rowsize, figsize=figsize)
+        slices=slices, contours=contours, rowsize=rowsize, figsize=figsize) #figsize)
 
     from nisnap._montage import __montage__
     has_orig = not bg is None
-    __montage__(paths, paths_orig, axes, opacity, has_orig, animated,
-        width=width, savefig=fp)
+    __montage__(paths, paths_orig, axes, opacity, has_orig, animated, savefig=fp)
 
 
     if savefig is None:

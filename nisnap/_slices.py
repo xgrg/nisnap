@@ -70,22 +70,6 @@ def _fix_rowsize_(axes, rowsize=None):
         raise TypeError('rowsize should be an int or a dict')
     return rs
 
-def _fix_figsize_(axes, figsize=None):
-
-    default_figsize = {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
-
-    if figsize is None:
-        fs = {e :default_figsize[e] for e in axes}
-    elif isinstance(figsize, (list, tuple)) and len(figsize) == 2:
-        fs = {each: figsize for each in axes}
-    elif isinstance(figsize, dict):
-        from nisnap._parse import __check_axes__
-        fs = {__check_axes__(e)[0]:figsize[e] for e in axes}
-    else:
-        raise TypeError('figsize should be a tuple/list of size 2 or a dict')
-
-    return fs
-
 
 def cut_slices(data, axes, rowsize, slices=None, step=3, threshold=75):
 

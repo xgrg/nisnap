@@ -17,9 +17,16 @@ def create_parser():
     parser.add_argument('--axes', required=False, default='ACS',
         help = "choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL',"\
             "'SAGITTAL' or 'CORONAL', or lowercase)")
+    parser.add_argument('--contours', required=False, action='store_true',
+        default=False,
+        help='If True, segmentations will be rendered as contoured regions. If False,'\
+        ' will be rendered as superimposed masks')
     parser.add_argument('--opacity', required=False, type=int,
         help = 'opacity (in %%) of the segmentation maps when plotted over a background '\
         'image. Only used if a background image is provided.')
+    parser.add_argument('--figsize', required=False, type=float, default=20,
+        help = 'figure size (in inches) (matplotlib definition). Ratio will be '\
+        'derived from slice aspect')
     parser.add_argument('-o', '--output', required=False,
         help='snapshot will be stored in this file. If extension is .gif, snapshot'\
             ' will be rendered as an animation.') #, type=argparse.FileType('w'))
@@ -34,6 +41,7 @@ def create_parser():
         help = '[XNAT mode] name of the resource to download')
     parser.add_argument('--cache', required=False, action='store_true',
         default=False, help='[XNAT mode] skip downloads (e.g. if running for a second time')
+
 
     parser.add_argument('--disable_warnings', required=False, action='store_true',
         default=False)
@@ -133,7 +141,8 @@ def run(args):
         xnat.plot_segment(args.config.name, args.experiment, savefig=args.output,
             resource_name=args.resource, axes=axes, raw=not args.nobg,
             opacity=args.opacity, animated=args.output.endswith('.gif'),
-            cache=args.cache)
+            cache=args.cache, contours=args.contours,
+            figsize=int(args.figsize))
     else:
         from . import snap
 
@@ -141,5 +150,6 @@ def run(args):
             else [e.name for e in args.files]
 
         snap.plot_segment(fp, axes=axes,
-            bg=args.bg.name, opacity=args.opacity,
-            animated=args.output.endswith('.gif'), savefig=args.output)
+            bg=args.bg.name, opacity=args.opacity, contours=args.contours,
+            animated=args.output.endswith('.gif'), savefig=args.output,
+            figsize=float(args.figsize))

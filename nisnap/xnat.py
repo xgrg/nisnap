@@ -18,6 +18,43 @@ def __is_valid_scan__(xnat_instance, scan) :
         valid = True
     return valid
 
+# def __get_T1__(x, e, experiment_id, sequence='T1_ALFA1'):
+#     t2_lut_names = [sequence]
+#     t2_scans = []
+#     scans = x.array.mrscans(experiment_id=experiment_id,\
+#             columns=['xnat:mrScanData/quality',
+#                      'xnat:mrScanData/type',
+#                      'xsiType']).data
+#     for s in scans:
+#         scan = e.scan(s['xnat:mrscandata/id'])
+#
+#         if scan.attrs.get('type') in t2_lut_names and \
+#             __is_valid_scan__(x, s):
+#                 t2_scans.append(scan.id())
+#     assert(len(t2_lut_names) == 1)
+#     #t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
+#     files = list(e.scan(t2_scans[0]).resource('NIFTI').files('*.nii.gz'))
+#     print(files)
+#     return files[0]
+
+
+def __get_T2__(x, e, experiment_id, sequence='T2_ALFA1'):
+    t2_lut_names = [sequence]
+    t2_scans = []
+    scans = x.array.mrscans(experiment_id=experiment_id,\
+            columns=['xnat:mrScanData/quality',
+                     'xnat:mrScanData/type',
+                     'xsiType']).data
+    for s in scans:
+        scan = e.scan(s['xnat:mrscandata/id'])
+
+        if scan.attrs.get('type') in t2_lut_names and \
+            __is_valid_scan__(x, s):
+                t2_scans.append(scan.id())
+    assert(len(t2_lut_names) == 1)
+    t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
+    return t2_t1space
+
 def download_resources(config, experiment_id, resource_name,  destination,
     raw=True, cache=False):
     """Download a given experiment/resource from an XNAT instance in a local
@@ -76,22 +113,9 @@ def download_resources(config, experiment_id, resource_name,  destination,
             fp1 = op.join(destination, '%s_T2_T1space.nii.gz'%experiment_id)
             filepaths.append(fp1)
             if not cache:
-                t2_lut_names = ['T2_ALFA1']
-                t2_scans = []
-                scans = x.array.mrscans(experiment_id=experiment_id,\
-                        columns=['xnat:mrScanData/quality',
-                                 'xnat:mrScanData/type',
-                                 'xsiType']).data
-                for s in scans:
-                    scan = e.scan(s['xnat:mrscandata/id'])
-
-                    if scan.attrs.get('type') in t2_lut_names and \
-                        __is_valid_scan__(x, s):
-                            t2_scans.append(scan.id())
-                assert(len(t2_lut_names) == 1)
-
-                t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
+                t2_t1space = __get_T2__(x, e, experiment_id)
                 t2_t1space.get(fp1)
+
         else:
             filepaths.append(None)
 
@@ -100,6 +124,15 @@ def download_resources(config, experiment_id, resource_name,  destination,
             c = list(r.files('%s*.nii.gz'%each))[0]
             fp = op.join(destination, '%s_%s_%s.nii.gz'\
                 %(experiment_id, resource_name, each))
+            if not cache:
+                c.get(fp)
+            filepaths.append(fp)
+
+    elif resource_name == 'ASHS':
+        r = e.resource(resource_name)
+        for each in ['tse.nii.gz', 'left_lfseg_corr_nogray.nii.gz']:
+            c = list(r.files('*%s'%each))[0]
+            fp = op.join(destination, '%s_%s_%s'%(experiment_id, resource_name, each))
             if not cache:
                 c.get(fp)
             filepaths.append(fp)
@@ -114,14 +147,24 @@ def download_resources(config, experiment_id, resource_name,  destination,
     #             c.get(fp)
     #         filepaths.append(fp)
 
-    elif resource_name == 'ASHS':
-        r = e.resource(resource_name)
-        for each in ['tse.nii.gz', 'left_lfseg_corr_nogray.nii.gz']:
-            c = list(r.files('*%s'%each))[0]
-            fp = op.join(destination, '%s_%s_%s'%(experiment_id, resource_name, each))
-            if not cache:
-                c.get(fp)
-            filepaths.append(fp)
+    # elif 'CAT12' in resource_name:
+    #     if raw:
+    #         fp1 = op.join(destination, '%s_T2_T1space.nii.gz'%experiment_id)
+    #         filepaths.append(fp1)
+    #         if not cache:
+    #             t2_t1space = __get_T2__(x, e, experiment_id)
+    #             t2_t1space.get(fp1)
+    #     else:
+    #         filepaths.append(None)
+    #
+    #     r = e.resource(resource_name)
+    #     for each in ['p1', 'p2', 'p3']:
+    #         c = list(r.files('mri/%s*.nii.gz'%each))[0]
+    #         fp = op.join(destination, '%s_%s_%s.nii.gz'\
+    #             %(experiment_id, resource_name, each))
+    #         if not cache:
+    #             c.get(fp)
+    #         filepaths.append(fp)
 
     return filepaths
 
@@ -129,7 +172,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
 def plot_segment(config, experiment_id, savefig=None, slices=None,
     resource_name='SPM12_SEGMENT_T2T1_COREG',
     axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False, rowsize=None,
-    figsize=None, width=2000, contours=False, cache=False):
+    figsize=10, contours=False, cache=False):
     """Download a given experiment/resource from an XNAT instance and create
     snapshots of this resource along a selected set of slices.
 
@@ -177,12 +220,10 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         Set the number of slices per row in the final compiled figure.
         Default: {'A': 9, 'C': 9, 'S': 6}
 
-    figsize: None, or a 2-uple of floats, or dict
-        Sets the dimensions of one row of slices.
-        Default: {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
-
-    width: int, optional
-        Width (in px) of the final compiled figure. Default: 2000.
+    figsize: None, or float
+        Figure width (in inches) (matplotlib definition). Ratio will be
+        derived from slice aspect.
+        Default: 10
 
     contours: boolean, optional
         If True, segmentations will be rendered as contoured regions. If False,
