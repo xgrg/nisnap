@@ -37,6 +37,7 @@ optional arguments:
   --bg BG               background image on which segmentations will be plotted.
   --axes AXES           choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL','SAGITTAL' or 'CORONAL', or lowercase)
   --opacity OPACITY     opacity (in %) of the segmentation maps when plotted over a background image. Only used if a background image is provided.
+  --contours            if True, segmentations will be rendered as contoured regions. If False, will be rendered as superimposed masks.
   -o OUTPUT, --output OUTPUT
                         snapshot will be stored in this file. If extension is .gif, snapshot will be rendered as an animation.
   --config CONFIG       [XNAT mode] XNAT configuration file
@@ -137,7 +138,8 @@ Example:
 ```python
 from nisnap import xnat
 xnat.plot_segment(config='/home/grg/.xnat.cfg', experiment_id='BBRC_E000',
-  raw=True, opacity=30, axes=('A'), slices=range(100,120,2), animated=True)
+  raw=True, opacity=30, axes=('A'), slices=range(100,120,2), figsize=(15,5),
+  animated=True)
 ```
 
 #### Reference:
