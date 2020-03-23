@@ -23,9 +23,9 @@ Inspired by tools like [nilearn](https://nilearn.github.io/),
 #### From a Terminal:
 
 ```sh
-nisnap c1.nii.gz c2.nii.gz c3.nii.gz --bg /tmp/raw.nii.gz --opacity 30 -o /tmp/test.gif
+nisnap c1.nii.gz c2.nii.gz c3.nii.gz --bg /tmp/raw.nii.gz --opacity 50 -o /tmp/snapshot.gif
 
-nisnap labels.nii.gz --bg /tmp/raw.nii.gz --opacity 30 --axes A -o /tmp/test.gif
+nisnap labels.nii.gz --bg raw.nii.gz --opacity 50 --axes A --contours -o /tmp/snapshot.gif
 ```
 
 ```sh

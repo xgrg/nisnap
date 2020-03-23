@@ -10,39 +10,29 @@ from matplotlib import cm, colors
 
 format = '.png'
 
-def aget_cmap(n_labels=None):
-    LUT = {0:  [0,   0,   0],
-           1:  [70,  130, 180],
-           2:  [205, 62,  78],
-           3:  [245, 245, 245],
-           4:  [120, 18,  134],
-           5:  [196, 58,  250],
-           6:  [0,   148, 0],
-           7:  [220, 248, 164],
-           8:  [230, 148, 34],
-           9:  [0,   118, 14],
-           10: [0,   118, 14],
-           11: [122, 186, 220],
-           12: [236, 13,  176],
-           13: [12,  48,  255],
-           14: [204, 182, 142],
-           15: [42,  204, 164],
-           16: [119, 159, 176]}
+def aget_cmap(labels=[]):
+    import json
+    import nisnap
+    import os.path as op
+    n_labels = len(labels)
+    fp = op.join(op.dirname(nisnap.__file__), 'lut.json')
+    LUT = json.load(open(fp))
+    LUT = {int(k): v for k,v in list(LUT.items())}
 
     if n_labels is None:
         n_labels = len(list(LUT.keys()))
-    LUT = [LUT[i] for i in range(0, n_labels+1)]
+    LUT = [LUT[i] for i in labels]
     LUT = np.array(LUT)
     LUT = LUT / 255.0
     return LUT
 
-def plot_contours_in_slice(slice_seg, target_axis, n_labels=None):
+def plot_contours_in_slice(slice_seg, target_axis, labels=None):
     """Plots contour around the data in slice (after binarization)"""
 
-    if n_labels is None: # if n_labels is not provided then take max from slice
-        n_labels = int(np.max(slice_seg))
+    if labels is None: # if n_labels is not provided then take max from slice
+        labels = list(np.unique(slice_seg))
 
-    cmap = ListedColormap(aget_cmap(n_labels))
+    cmap = ListedColormap(aget_cmap(labels))
 
     num_labels = len(cmap.colors)
     unique_labels = np.arange(num_labels, dtype='int16')
@@ -80,7 +70,7 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
                'C': lambda y,x: y[:,x,:],
                'S': lambda y,x: y[x,:,:]}
 
-    n_labels = int(np.max(data))
+    labels = list(np.unique(data))
 
     if figsize is None:
         ratio = len(slices) / float(len(slices[0]))
@@ -109,7 +99,7 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
 
             test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
 
-            plot_contours_in_slice(test, ax, n_labels=n_labels)
+            plot_contours_in_slice(test, ax, labels=labels)
             ax.axis('off')
 
             ax.text(0, 0, '%i' %slice_index,
@@ -141,7 +131,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     has_orig = not bb is None
 
     paths = []
-    n_labels = int(np.max(data))
+    labels = list(np.unique(data))
     if not has_orig:
         bb = {}
 
@@ -180,7 +170,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                 if has_orig:
                     cmap = 'gray'
                 else:
-                    cmap = ListedColormap(aget_cmap(n_labels))
+                    cmap = ListedColormap(aget_cmap(labels))
 
                 test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
                 ax.imshow(test, interpolation='none', cmap=cmap)
