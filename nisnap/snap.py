@@ -15,7 +15,7 @@ def aget_cmap(labels=[]):
     import nisnap
     import os.path as op
     n_labels = len(labels)
-    fp = op.join(op.dirname(nisnap.__file__), 'lut.json')
+    fp = op.join(op.dirname(nisnap.__file__), 'colormap.json')
     LUT = json.load(open(fp))
     LUT = {int(k): v for k,v in list(LUT.items())}
 
