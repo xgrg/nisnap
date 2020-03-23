@@ -88,20 +88,20 @@ class RunThemAll(unittest.TestCase):
         parser = parse.create_parser()
         args = '--bg /tmp/BBRCDEV_E02859_T2_T1space.nii.gz '\
            '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c1.nii.gz /tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c2.nii.gz '\
-           '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c3.nii.gz -o /tmp/test.png --axes A --opacity 30'
+           '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c3.nii.gz -o /tmp/test.png --axes x --opacity 30'
         args = parser.parse_args(args.split(' '))
         parse.run(args)
 
     def test_003_snap_xnat(self):
         parser = parse.create_parser()
         args = '--config .xnat.cfg '\
-           '-e BBRCDEV_E02859 -o /tmp/test.png --axes A --opacity 30'
+           '-e BBRCDEV_E02859 -o /tmp/test.png --axes x --opacity 30'
         args = parser.parse_args(args.split(' '))
         parse.run(args)
 
     def test_004(self):
         xnat.plot_segment(config='.xnat.cfg',
-            experiment_id='BBRCDEV_E02859', axes=('A'), raw=False,
+            experiment_id='BBRCDEV_E02859', axes='x', raw=False,
             animated=False, savefig=None)
 
     def test_005(self):
@@ -109,17 +109,17 @@ class RunThemAll(unittest.TestCase):
             experiment_id='BBRCDEV_E02859',
             resource_name='SPM12_SEGMENT_T2T1_COREG3', destination='/tmp',
             raw=True)
-        nisnap.plot_segment(filepaths[1:], bg=None, axes=('A'),
+        nisnap.plot_segment(filepaths[1:], bg=None, axes='x',
             slices=range(100, 110, 2),
             animated=False, savefig='/tmp/toto')
-        nisnap.plot_segment(filepaths[1:], bg=None, axes=('A'),
-            slices={'A':range(100, 110, 2)},
+        nisnap.plot_segment(filepaths[1:], bg=None, axes='x',
+            slices={'x':range(100, 110, 2)},
             animated=False, savefig='/tmp/toto')
         for bg in [None, filepaths[0]]:
             for animated in [True, False]:
                 for savefig in [None, '/tmp/toto']:
                     print('bg:', bg, 'animated:', animated, 'savefig:', savefig)
-                    nisnap.plot_segment(filepaths[1:], bg=bg, axes=('A'),
+                    nisnap.plot_segment(filepaths[1:], bg=bg, axes='x',
                         slices=range(100,110,2),
                         animated=animated, savefig=savefig)
 
@@ -128,14 +128,14 @@ class RunThemAll(unittest.TestCase):
         xnat.plot_segment(config='.xnat.cfg',
             experiment_id='BBRCDEV_E02859',
             resource_name='SPM12_SEGMENT_T2T1_COREG3',
-            axes='A', opacity=100, slices=range(160,180,3), rowsize={'A':9},
+            axes='x', opacity=100, slices=range(160,180,3), rowsize={'x':9},
             animated=False, contours=True, cache=True)
 
     def test_007(self):
-        figsize = {'A':(10,3)}
+        figsize = {'x':(10,3)}
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
             experiment_id='BBRCDEV_E02443',
             resource_name='ASHS', figsize=figsize,
-            axes='A', opacity=50, slices=range(8,27,1), rowsize=5,
+            axes='x', opacity=50, slices=range(8,27,1), rowsize=5,
             animated=True, raw=False, contours=False, cache=False)

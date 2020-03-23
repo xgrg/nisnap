@@ -66,9 +66,9 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
 
     bb = {}
 
-    lambdas = {'A': lambda y,x: y[:,:,x],
-               'C': lambda y,x: y[:,x,:],
-               'S': lambda y,x: y[x,:,:]}
+    lambdas = {'x': lambda y,x: y[:,:,x],
+               'y': lambda y,x: y[:,x,:],
+               'z': lambda y,x: y[x,:,:]}
 
     labels = list(np.unique(data))
 
@@ -115,17 +115,6 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
     return paths, bb
 
 
-def __get_lambdas__(data):
-    if len(data.shape) == 4: # RGB mode (4D volume)
-        lambdas = {'A': lambda x: data[:,:,x,:],
-                   'C': lambda x: data[:,x,:,:],
-                   'S': lambda x: data[x,:,:,:]}
-    else: # standard 3D label volume
-        lambdas = {'A': lambda x: data[:,:,x],
-                   'C': lambda x: data[:,x,:],
-                   'S': lambda x: data[x,:,:]}
-    return lambdas
-
 
 def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     has_orig = not bb is None
@@ -135,6 +124,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     if not has_orig:
         bb = {}
 
+    from nisnap._slices import __get_lambdas__
     lambdas = __get_lambdas__(data)
 
     fig = plt.figure(dpi=300, figsize=figsize)
@@ -189,7 +179,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
 
 
-def __snap__(data, axes=('A', 'S', 'C'), bg=None, slices=None, rowsize=None,
+def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
         contours=False, figsize=None):
 
     plt.rcParams['figure.facecolor'] = 'black'
@@ -252,7 +242,7 @@ def __stack_img__(filepaths):
     return data2
 
 
-def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None,
+def plot_segment(filepaths, axes='xyz', bg=None, opacity=30, slices=None,
         animated=False, savefig=None, contours=False, rowsize=None,
         figsize=None):
     """Plots a set of segmentation maps/masks.
@@ -264,8 +254,7 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None
         and in same reference space.
 
     axes: string, or a tuple of strings
-        Choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL',
-        'SAGITTAL' or 'CORONAL', or lowercase)
+        Choose the direction of the cuts (among 'x', 'y', 'z')
 
     bg: None or str
         Path to the background image that the masks will be plotted on top of.
@@ -293,7 +282,7 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None
 
     rowsize: None, or int, or dict
         Set the number of slices per row in the final compiled figure.
-        Default: {'A': 9, 'C': 9, 'S': 6}
+        Default: {'x': 9, 'y': 9, 'z': 6}
 
     figsize: None, or float
         Figure size (in inches) (matplotlib definition). Default: auto

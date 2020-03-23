@@ -25,7 +25,7 @@ Inspired by tools like [nilearn](https://nilearn.github.io/),
 ```sh
 nisnap c1.nii.gz c2.nii.gz c3.nii.gz --bg /tmp/raw.nii.gz --opacity 50 -o /tmp/snapshot.gif
 
-nisnap labels.nii.gz --bg raw.nii.gz --opacity 50 --axes A --contours -o /tmp/snapshot.gif
+nisnap labels.nii.gz --bg raw.nii.gz --opacity 50 --axes x --contours -o /tmp/snapshot.gif
 ```
 
 ```sh
@@ -35,7 +35,7 @@ Arguments:
 
 optional arguments:
   --bg BG               background image on which segmentations will be plotted.
-  --axes AXES           choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL','SAGITTAL' or 'CORONAL', or lowercase)
+  --axes AXES           choose the direction of the cuts (among 'x', 'y', or 'z')
   --opacity OPACITY     opacity (in %) of the segmentation maps when plotted over a background image. Only used if a background image is provided.
   --contours            if True, segmentations will be rendered as contoured regions. If False, will be rendered as superimposed masks.
   -o OUTPUT, --output OUTPUT
@@ -59,13 +59,13 @@ Example:
 import nisnap
 filepaths = ['c1.nii.gz', 'c2.nii.gz', 'c3.nii.gz']
 bg = 'source.nii.gz'
-nisnap.plot_segment(filepaths, bg=bg, opacity=30, axes='A', animated=True)
+nisnap.plot_segment(filepaths, bg=bg, opacity=30, axes='x', animated=True)
 ```
 
 #### Reference:
 
 ```python
-def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None,
+def plot_segment(filepaths, axes='xyz', bg=None, opacity=30, slices=None,
         animated=False, savefig=None, contours=False, rowsize=None,
         figsize=None, width=2000):
     """Plots a set of segmentation maps/masks.
@@ -77,8 +77,7 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None
         and in same reference space.
 
     axes: string, or a tuple of strings
-        Choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL',
-        'SAGITTAL' or 'CORONAL', or lowercase)
+        Choose the direction of the cuts (among 'x', 'y', or 'z')
 
     bg: None or str
         Path to the background image that the masks will be plotted on top of.
@@ -106,11 +105,11 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None
 
     rowsize: None, or int, or dict
         Set the number of slices per row in the final compiled figure.
-        Default: {'A': 9, 'C': 9, 'S': 6}
+        Default: {'x': 9, 'y': 9, 'z': 6}
 
     figsize: None, or a 2-uple of floats, or dict
         Sets the dimensions of one row of slices.
-        Default: {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
+        Default: {'x': (37, 3), 'y': (40, 3), 'z': (18, 3)}
 
     width: int, optional
         Width (in px) of the final compiled figure. Default: 2000.
@@ -138,7 +137,7 @@ Example:
 ```python
 from nisnap import xnat
 xnat.plot_segment(config='/home/grg/.xnat.cfg', experiment_id='BBRC_E000',
-  raw=True, opacity=30, axes=('A'), slices=range(100,120,2), figsize=(15,5),
+  raw=True, opacity=30, axes='x', slices=range(100,120,2), figsize=(15,5),
   animated=True)
 ```
 
@@ -147,7 +146,7 @@ xnat.plot_segment(config='/home/grg/.xnat.cfg', experiment_id='BBRC_E000',
 ```python
 def plot_segment(config, experiment_id, savefig=None, slices=None,
     resource_name='SPM12_SEGMENT_T2T1_COREG',
-    axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False, rowsize=None,
+    axes='xyz', raw=True, opacity=10, animated=False, rowsize=None,
     figsize=None, width=2000, contours=False, cache=False):
     """Download a given experiment/resource from an XNAT instance and create
     snapshots of this resource along a selected set of slices.
@@ -175,8 +174,7 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         instance. Default: SPM12_SEGMENT_T2T1_COREG
 
     axes: string, or a tuple of strings
-        Choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL',
-        'SAGITTAL' or 'CORONAL', or lowercase)
+        Choose the direction of the cuts (among 'x', 'y', 'z')
 
     raw: boolean, optional
         If True, the segmentation maps will be plotted over a background image
@@ -194,11 +192,11 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
 
     rowsize: None, or int, or dict
         Set the number of slices per row in the final compiled figure.
-        Default: {'A': 9, 'C': 9, 'S': 6}
+        Default: {'x': 9, 'y': 9, 'z': 6}
 
     figsize: None, or a 2-uple of floats, or dict
         Sets the dimensions of one row of slices.
-        Default: {'A': (37, 3), 'C': (40, 3), 'S': (18, 3)}
+        Default: {'x': (37, 3), 'y': (40, 3), 'z': (18, 3)}
 
     width: int, optional
         Width (in px) of the final compiled figure. Default: 2000.

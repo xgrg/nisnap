@@ -15,8 +15,7 @@ def create_parser():
     parser.add_argument('--bg', required=False, type=argparse.FileType('r'),
         help = 'background image on which segmentations will be plotted.')
     parser.add_argument('--axes', required=False, default='ACS',
-        help = "choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL',"\
-            "'SAGITTAL' or 'CORONAL', or lowercase)")
+        help = "choose the direction of the cuts (among 'x', 'y' or 'z')")
     parser.add_argument('--contours', required=False, action='store_true',
         default=False,
         help='If True, segmentations will be rendered as contoured regions. If False,'\
@@ -55,14 +54,14 @@ def __check_axes__(axes):
     from collections.abc import Iterable
     is_correct = True
     curated_axes = []
-    ax_names = ('A', 'S', 'C', 'AXIAL', 'SAGITTAL', 'CORONAL')
+    ax_names = ('x', 'y', 'z')
     if ((isinstance(axes, str) or isinstance(axes, Iterable)) \
             and len(axes) > 0 and len(axes) < 4):
         for e in axes:
-            if not e.upper() in ax_names:
+            if not e.lower() in ax_names:
                 is_correct = False
             else:
-                curated_axes.append(e.upper())
+                curated_axes.append(e.lower())
     else:
         is_correct = False
 

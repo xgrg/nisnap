@@ -171,7 +171,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
 
 def plot_segment(config, experiment_id, savefig=None, slices=None,
     resource_name='SPM12_SEGMENT_T2T1_COREG',
-    axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False, rowsize=None,
+    axes='xyz', raw=True, opacity=10, animated=False, rowsize=None,
     figsize=None, contours=False, cache=False):
     """Download a given experiment/resource from an XNAT instance and create
     snapshots of this resource along a selected set of slices.
@@ -199,8 +199,7 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         instance. Default: SPM12_SEGMENT_T2T1_COREG
 
     axes: string, or a tuple of strings
-        Choose the direction of the cuts (among 'A', 'S', 'C', 'AXIAL',
-        'SAGITTAL' or 'CORONAL', or lowercase)
+        Choose the direction of the cuts (among 'x', 'y', or 'z')
 
     raw: boolean, optional
         If True, the segmentation maps will be plotted over a background image
@@ -218,7 +217,7 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
 
     rowsize: None, or int, or dict
         Set the number of slices per row in the final compiled figure.
-        Default: {'A': 9, 'C': 9, 'S': 6}
+        Default: {'x': 9, 'y': 9, 'z': 6}
 
     figsize: None, or float
         Figure size (matplotlib definition) along each axis. Default: auto.
