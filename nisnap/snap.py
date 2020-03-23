@@ -82,12 +82,10 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
 
     n_labels = int(np.max(data))
 
+    if figsize is None:
+        ratio = len(slices) / float(len(slices[0]))
+        figsize = (figsize, figsize * ratio)
 
-    ratio = {'A': float(data.shape[0]/data.shape[1]),
-        'C': float(data.shape[0]/data.shape[2]),
-        'S': float(data.shape[1]/data.shape[2])}[axis]
-
-    figsize = (figsize, int(figsize*ratio))
     fig = plt.figure(dpi=300, figsize=figsize)
 
     abs_index = 0
@@ -127,14 +125,7 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
     return paths, bb
 
 
-def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
-    has_orig = not bb is None
-
-    paths = []
-    n_labels = int(np.max(data))
-    if not has_orig:
-        bb = {}
-
+def __get_lambdas__(data):
     if len(data.shape) == 4: # RGB mode (4D volume)
         lambdas = {'A': lambda x: data[:,:,x,:],
                    'C': lambda x: data[:,x,:,:],
@@ -143,12 +134,21 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
         lambdas = {'A': lambda x: data[:,:,x],
                    'C': lambda x: data[:,x,:],
                    'S': lambda x: data[x,:,:]}
+    return lambdas
 
-    test = np.flip(np.swapaxes(np.abs(lambdas[axis](0)), 0, 1), 0)
-    ratio = test.shape[1]/float(test.shape[0])
-    figsize = (figsize, figsize/ratio)
+
+def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
+    has_orig = not bb is None
+
+    paths = []
+    n_labels = int(np.max(data))
+    if not has_orig:
+        bb = {}
+
+    lambdas = __get_lambdas__(data)
 
     fig = plt.figure(dpi=300, figsize=figsize)
+
     _, path = tempfile.mkstemp(suffix='_%s%s'%(axis, format))
     paths.append(path)
 
@@ -205,8 +205,9 @@ def __snap__(data, axes=('A', 'S', 'C'), bg=None, slices=None, rowsize=None,
     plt.rcParams['figure.facecolor'] = 'black'
     plt.rcParams.update({'figure.max_open_warning': 0})
 
-    from nisnap._slices import cut_slices, _fix_rowsize_, __maxsize__
+    from nisnap._slices import cut_slices, _fix_rowsize_, _fix_figsize_, __maxsize__
     rowsize = _fix_rowsize_(axes, rowsize)
+    figsize = _fix_figsize_(axes, figsize)
 
     t = int(__maxsize__(data)/3.0)
     slices = cut_slices(data, axes, slices=slices, rowsize=rowsize,
@@ -217,32 +218,32 @@ def __snap__(data, axes=('A', 'S', 'C'), bg=None, slices=None, rowsize=None,
         raise Exception(msg)
     has_orig = not bg is None
 
+
+
     if has_orig:
         n_slices = 2 * n_slices
     pbar = tqdm(total=n_slices, leave=False)
 
     paths, paths_orig = {}, {}
 
-    for each in axes:
+    for axis in axes:
+
         if contours:
             # Rendering contours
             path, bb = _snap_contours_(data,
-                slices[each], axis=each, bg=bg, figsize=figsize, #figsize[each],
-                pbar=pbar)
-            paths[each] = path
+                slices[axis], axis=axis, bg=bg, figsize=figsize[axis], pbar=pbar)
+            paths[axis] = path
 
         else:
             # Rendering masks
             path, bb = _snap_slices_(data,
-                slices[each], axis=each, bb=None, figsize=figsize, #figsize[each],
-                pbar=pbar)
-            paths[each] = path
+                slices[axis], axis=axis, bb=None, figsize=figsize[axis], pbar=pbar)
+            paths[axis] = path
 
         if has_orig:
             path, _ = _snap_slices_(bg,
-                slices[each], axis=each, bb=bb, figsize=figsize, #figsize[each],
-                pbar=pbar)
-            paths_orig[each] = path
+                slices[axis], axis=axis, bb=bb, figsize=figsize[axis], pbar=pbar)
+            paths_orig[axis] = path
 
     pbar.update(n_slices)
     pbar.close()
@@ -263,7 +264,7 @@ def __stack_img__(filepaths):
 
 def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None,
         animated=False, savefig=None, contours=False, rowsize=None,
-        figsize=10):
+        figsize=None):
     """Plots a set of segmentation maps/masks.
 
     Parameters
@@ -305,9 +306,7 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None
         Default: {'A': 9, 'C': 9, 'S': 6}
 
     figsize: None, or float
-        Figure width (in inches) (matplotlib definition). Ratio will be
-        derived from slice aspect.
-        Default: 10
+        Figure size (in inches) (matplotlib definition). Default: auto
 
 
     See Also
@@ -340,7 +339,7 @@ def plot_segment(filepaths, axes=('A','C','S'), bg=None, opacity=30, slices=None
         bg = np.asarray(nib.load(bg).dataobj)
 
     paths, paths_orig = __snap__(data, axes=axes, bg=bg,
-        slices=slices, contours=contours, rowsize=rowsize, figsize=figsize) #figsize)
+        slices=slices, contours=contours, rowsize=rowsize, figsize=figsize)
 
     from nisnap._montage import __montage__
     has_orig = not bg is None

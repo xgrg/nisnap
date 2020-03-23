@@ -71,6 +71,23 @@ def _fix_rowsize_(axes, rowsize=None):
     return rs
 
 
+def _fix_figsize_(axes, figsize=None):
+
+    default_figsize = {'A': (10, 5), 'C': (10, 5), 'S': (10, 5)}
+
+    if figsize is None:
+        fs = {e :default_figsize[e] for e in axes}
+    elif isinstance(figsize, (list, tuple)) and len(figsize) == 2:
+        fs = {each: figsize for each in axes}
+    elif isinstance(figsize, dict):
+        from nisnap._parse import __check_axes__
+        fs = {__check_axes__(e)[0]:figsize[e] for e in axes}
+    else:
+        raise TypeError('figsize should be a tuple/list of size 2 or a dict')
+
+    return fs
+
+
 def cut_slices(data, axes, rowsize, slices=None, step=3, threshold=75):
 
     default_slices = {'A': list(range(0, data.shape[2], step)),

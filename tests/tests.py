@@ -132,7 +132,7 @@ class RunThemAll(unittest.TestCase):
             animated=False, contours=True, cache=True)
 
     def test_007(self):
-        figsize = 15
+        figsize = {'A':(10,3)}
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
             experiment_id='BBRCDEV_E02443',

@@ -24,9 +24,6 @@ def create_parser():
     parser.add_argument('--opacity', required=False, type=int,
         help = 'opacity (in %%) of the segmentation maps when plotted over a background '\
         'image. Only used if a background image is provided.')
-    parser.add_argument('--figsize', required=False, type=float, default=20,
-        help = 'figure size (in inches) (matplotlib definition). Ratio will be '\
-        'derived from slice aspect')
     parser.add_argument('-o', '--output', required=False,
         help='snapshot will be stored in this file. If extension is .gif, snapshot'\
             ' will be rendered as an animation.') #, type=argparse.FileType('w'))
@@ -141,8 +138,7 @@ def run(args):
         xnat.plot_segment(args.config.name, args.experiment, savefig=args.output,
             resource_name=args.resource, axes=axes, raw=not args.nobg,
             opacity=args.opacity, animated=args.output.endswith('.gif'),
-            cache=args.cache, contours=args.contours,
-            figsize=int(args.figsize))
+            cache=args.cache, contours=args.contours)
     else:
         from . import snap
 
@@ -151,5 +147,4 @@ def run(args):
 
         snap.plot_segment(fp, axes=axes,
             bg=args.bg.name, opacity=args.opacity, contours=args.contours,
-            animated=args.output.endswith('.gif'), savefig=args.output,
-            figsize=float(args.figsize))
+            animated=args.output.endswith('.gif'), savefig=args.output)

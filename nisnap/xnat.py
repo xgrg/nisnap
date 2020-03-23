@@ -172,7 +172,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
 def plot_segment(config, experiment_id, savefig=None, slices=None,
     resource_name='SPM12_SEGMENT_T2T1_COREG',
     axes=('A', 'C', 'S'), raw=True, opacity=10, animated=False, rowsize=None,
-    figsize=10, contours=False, cache=False):
+    figsize=None, contours=False, cache=False):
     """Download a given experiment/resource from an XNAT instance and create
     snapshots of this resource along a selected set of slices.
 
@@ -221,9 +221,7 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         Default: {'A': 9, 'C': 9, 'S': 6}
 
     figsize: None, or float
-        Figure width (in inches) (matplotlib definition). Ratio will be
-        derived from slice aspect.
-        Default: 10
+        Figure size (matplotlib definition) along each axis. Default: auto.
 
     contours: boolean, optional
         If True, segmentations will be rendered as contoured regions. If False,
