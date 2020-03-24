@@ -146,5 +146,5 @@ class RunThemAll(unittest.TestCase):
             experiment_id='BBRCDEV_E00375',
             resource_name='CAT12_SEGMENT', figsize=(10,3),
             axes='x', opacity=50, slices=range(160,180,3), rowsize=9,
-            animated=False, raw=False, contours=False, cache=False,
+            animated=False, contours=False, cache=False,
             samebox=True)
