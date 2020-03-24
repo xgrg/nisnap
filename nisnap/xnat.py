@@ -18,24 +18,24 @@ def __is_valid_scan__(xnat_instance, scan) :
         valid = True
     return valid
 
-# def __get_T1__(x, e, experiment_id, sequence='T1_ALFA1'):
-#     t2_lut_names = [sequence]
-#     t2_scans = []
-#     scans = x.array.mrscans(experiment_id=experiment_id,\
-#             columns=['xnat:mrScanData/quality',
-#                      'xnat:mrScanData/type',
-#                      'xsiType']).data
-#     for s in scans:
-#         scan = e.scan(s['xnat:mrscandata/id'])
-#
-#         if scan.attrs.get('type') in t2_lut_names and \
-#             __is_valid_scan__(x, s):
-#                 t2_scans.append(scan.id())
-#     assert(len(t2_lut_names) == 1)
-#     #t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
-#     files = list(e.scan(t2_scans[0]).resource('NIFTI').files('*.nii.gz'))
-#     print(files)
-#     return files[0]
+def __get_T1__(x, e, experiment_id, sequence='T1_ALFA1'):
+    t2_lut_names = [sequence]
+    t2_scans = []
+    scans = x.array.mrscans(experiment_id=experiment_id,\
+            columns=['xnat:mrScanData/quality',
+                     'xnat:mrScanData/type',
+                     'xsiType']).data
+    for s in scans:
+        scan = e.scan(s['xnat:mrscandata/id'])
+
+        if scan.attrs.get('type') in t2_lut_names and \
+            __is_valid_scan__(x, s):
+                t2_scans.append(scan.id())
+    assert(len(t2_lut_names) == 1)
+    #t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
+    files = list(e.scan(t2_scans[0]).resource('NIFTI').files('*.nii.gz'))
+    print(files)
+    return files[0]
 
 
 def __get_T2__(x, e, experiment_id, sequence='T2_ALFA1'):
@@ -147,24 +147,24 @@ def download_resources(config, experiment_id, resource_name,  destination,
     #             c.get(fp)
     #         filepaths.append(fp)
 
-    # elif 'CAT12' in resource_name:
-    #     if raw:
-    #         fp1 = op.join(destination, '%s_T2_T1space.nii.gz'%experiment_id)
-    #         filepaths.append(fp1)
-    #         if not cache:
-    #             t2_t1space = __get_T2__(x, e, experiment_id)
-    #             t2_t1space.get(fp1)
-    #     else:
-    #         filepaths.append(None)
-    #
-    #     r = e.resource(resource_name)
-    #     for each in ['p1', 'p2', 'p3']:
-    #         c = list(r.files('mri/%s*.nii.gz'%each))[0]
-    #         fp = op.join(destination, '%s_%s_%s.nii.gz'\
-    #             %(experiment_id, resource_name, each))
-    #         if not cache:
-    #             c.get(fp)
-    #         filepaths.append(fp)
+    elif 'CAT12' in resource_name:
+        if raw:
+            fp1 = op.join(destination, '%s_T1.nii.gz'%experiment_id)
+            filepaths.append(fp1)
+            if not cache:
+                t2_t1space = __get_T1__(x, e, experiment_id)
+                t2_t1space.get(fp1)
+        else:
+            filepaths.append(None)
+
+        r = e.resource(resource_name)
+        for each in ['p1', 'p2', 'p3']:
+            c = list(r.files('mri/%s*.nii.gz'%each))[0]
+            fp = op.join(destination, '%s_%s_%s.nii.gz'\
+                %(experiment_id, resource_name, each))
+            if not cache:
+                c.get(fp)
+            filepaths.append(fp)
 
     return filepaths
 
@@ -172,7 +172,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
 def plot_segment(config, experiment_id, savefig=None, slices=None,
     resource_name='SPM12_SEGMENT_T2T1_COREG',
     axes='xyz', raw=True, opacity=10, animated=False, rowsize=None,
-    figsize=None, contours=False, cache=False):
+    figsize=None, contours=False, cache=False, samebox=False):
     """Download a given experiment/resource from an XNAT instance and create
     snapshots of this resource along a selected set of slices.
 
@@ -230,6 +230,9 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         If False, resources will be normally downloaded from XNAT. If True,
         download will be skipped and data will be looked up locally.
         Default: False
+
+    samebox: boolean, optional
+        If True, bounding box will be fixed. If False, adjusted for each slice.
 
     Notes
     -----

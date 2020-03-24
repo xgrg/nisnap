@@ -139,3 +139,12 @@ class RunThemAll(unittest.TestCase):
             resource_name='ASHS', figsize=figsize,
             axes='x', opacity=50, slices=range(8,27,1), rowsize=5,
             animated=True, raw=False, contours=False, cache=False)
+
+    def test_008(self):
+        from nisnap import xnat
+        xnat.plot_segment(config='.xnat.cfg',
+            experiment_id='BBRCDEV_E00375',
+            resource_name='CAT12_SEGMENT', figsize=(10,3),
+            axes='x', opacity=50, slices=range(160,180,3), rowsize=9,
+            animated=False, raw=False, contours=False, cache=False,
+            samebox=True)

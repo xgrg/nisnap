@@ -197,7 +197,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
 
 def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
-        contours=False, figsize=None):
+        contours=False, figsize=None, samebox=False):
 
     plt.rcParams['figure.facecolor'] = 'black'
     plt.rcParams.update({'figure.max_open_warning': 0})
@@ -215,8 +215,6 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
         raise Exception(msg)
     has_orig = not bg is None
 
-    same_box = True
-
     if has_orig:
         n_slices = 2 * n_slices
     pbar = tqdm(total=n_slices, leave=False)
@@ -224,7 +222,7 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
     paths, paths_orig = {}, {}
 
     for axis in axes:
-        if same_box:
+        if samebox:
             from nisnap._slices import __get_abs_minmax
             same_bb = __get_abs_minmax(data, axis, slices[axis], margin = 5)
             log.warning('Using bounding box: %s (axis %s)'%(same_bb[0][0], axis))
@@ -236,21 +234,21 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
 
         if contours:
             # Rendering contours
-            if same_box:
+            if samebox:
                 opt['bb'] = same_bb
 
             path, bb = _snap_contours_(data, bg=bg, **opt)
             paths[axis] = path
 
         else:
-            opt['bb'] = None if not same_box else same_bb
+            opt['bb'] = None if not samebox else same_bb
             # Rendering masks
             path, bb = _snap_slices_(data, **opt)
             paths[axis] = path
 
 
         if has_orig:
-            opt['bb'] = bb if not same_box else same_bb
+            opt['bb'] = bb if not samebox else same_bb
             path, _ = _snap_slices_(bg, **opt)
             paths_orig[axis] = path
 
@@ -273,7 +271,7 @@ def __stack_img__(filepaths):
 
 def plot_segment(filepaths, axes='xyz', bg=None, opacity=30, slices=None,
         animated=False, savefig=None, contours=False, rowsize=None,
-        figsize=None):
+        figsize=None, samebox=False):
     """Plots a set of segmentation maps/masks.
 
     Parameters
@@ -316,6 +314,8 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=30, slices=None,
     figsize: None, or float
         Figure size (in inches) (matplotlib definition). Default: auto
 
+    samebox: boolean, optional
+        If True, bounding box will be fixed. If False, adjusted for each slice.
 
     See Also
     --------

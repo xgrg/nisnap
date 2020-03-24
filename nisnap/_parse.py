@@ -20,6 +20,9 @@ def create_parser():
         default=False,
         help='If True, segmentations will be rendered as contoured regions. If False,'\
         ' will be rendered as superimposed masks')
+    parser.add_argument('--samebox', required=False, action='store_true',
+        default=False, help='If True, bounding box will be fixed. If False, adjusted '\
+        ' for each slice.')
     parser.add_argument('--opacity', required=False, type=int,
         help = 'opacity (in %%) of the segmentation maps when plotted over a background '\
         'image. Only used if a background image is provided.')
@@ -37,7 +40,6 @@ def create_parser():
         help = '[XNAT mode] name of the resource to download')
     parser.add_argument('--cache', required=False, action='store_true',
         default=False, help='[XNAT mode] skip downloads (e.g. if running for a second time')
-
 
     parser.add_argument('--disable_warnings', required=False, action='store_true',
         default=False)
@@ -137,7 +139,7 @@ def run(args):
         xnat.plot_segment(args.config.name, args.experiment, savefig=args.output,
             resource_name=args.resource, axes=axes, raw=not args.nobg,
             opacity=args.opacity, animated=args.output.endswith('.gif'),
-            cache=args.cache, contours=args.contours)
+            cache=args.cache, contours=args.contours, samebox=args.samebox)
     else:
         from . import snap
 
@@ -146,4 +148,5 @@ def run(args):
 
         snap.plot_segment(fp, axes=axes,
             bg=args.bg.name, opacity=args.opacity, contours=args.contours,
-            animated=args.output.endswith('.gif'), savefig=args.output)
+            animated=args.output.endswith('.gif'), savefig=args.output,
+            samebox=args.samebox)
