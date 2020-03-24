@@ -286,7 +286,7 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     filepaths = filepaths[1] if len(filepaths) == 2 else filepaths[1:]
     snap.plot_segment(filepaths, axes=axes, bg=bg, opacity=opacity,
         animated=animated, savefig=fp, figsize=figsize, contours=contours,
-        rowsize=rowsize, slices=slices)
+        rowsize=rowsize, slices=slices, samebox=samebox)
 
     if savefig is None:
         # Return image

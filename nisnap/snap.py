@@ -347,7 +347,8 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=30, slices=None,
         bg = np.asarray(nib.load(bg).dataobj)
 
     paths, paths_orig = __snap__(data, axes=axes, bg=bg,
-        slices=slices, contours=contours, rowsize=rowsize, figsize=figsize)
+        slices=slices, contours=contours, rowsize=rowsize, figsize=figsize,
+        samebox=samebox)
 
     from nisnap._montage import __montage__
     has_orig = not bg is None
