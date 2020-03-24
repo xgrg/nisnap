@@ -21,7 +21,8 @@ def aget_cmap(labels=[]):
 
     if n_labels is None:
         n_labels = len(list(LUT.keys()))
-    LUT = [LUT[i] for i in labels]
+    max_label = int(np.max(labels))
+    LUT = [LUT.get(i, [0,0,0]) for i in range(0, max_label + 1)]
     LUT = np.array(LUT)
     LUT = LUT / 255.0
     return LUT
@@ -57,14 +58,17 @@ def plot_contours_in_slice(slice_seg, target_axis, labels=None):
 
     return
 
-def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
+def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
     plt.style.use('dark_background')
 
     paths = []
     _, path = tempfile.mkstemp(suffix='_%s%s'%(axis, format))
     paths.append(path)
 
-    bb = {}
+
+    same_box = not bb is None
+    if not same_box:
+        bb = {}
 
     lambdas = {'x': lambda y,x: y[:,:,x],
                'y': lambda y,x: y[:,x,:],
@@ -80,7 +84,8 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
 
     abs_index = 0
     for a, chunk in enumerate(slices):
-        bb[a] = []
+        if not same_box:
+            bb[a] = []
 
         for i, slice_index in enumerate(chunk):
             abs_index += 1
@@ -88,13 +93,17 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, pbar=None):
             ax = fig.add_subplot(len(slices), len(slices[0]), abs_index,
                     label='%s_%s'%(axis, slice_index))
             test = np.flip(np.swapaxes(np.abs(lambdas[axis](data, int(slice_index))), 0, 1), 0)
-            xs, ys = np.where(test!=0)
+            if not same_box:
+                xs, ys = np.where(test!=0)
+                bb[a].append((xs, ys))
+            else:
+                xs, ys = bb[a][i]
 
-            bb[a].append((xs, ys))
             if len(xs) == 0: continue
 
             test3 = np.flip(np.swapaxes(np.abs(lambdas[axis](bg, int(slice_index))), 0, 1), 0)
             test3 = test3[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
+
             ax.imshow(test3, interpolation='none', cmap='gray')
 
             test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
@@ -120,14 +129,13 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     has_orig = not bb is None
 
     paths = []
-    labels = list(np.unique(data))
     if not has_orig:
         bb = {}
 
+    fig = plt.figure(dpi=300, figsize=figsize)
+
     from nisnap._slices import __get_lambdas__
     lambdas = __get_lambdas__(data)
-
-    fig = plt.figure(dpi=300, figsize=figsize)
 
     _, path = tempfile.mkstemp(suffix='_%s%s'%(axis, format))
     paths.append(path)
@@ -157,7 +165,14 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                 ax.imshow((test * 255).astype(np.uint8), interpolation='none', )
 
             else: # standard 3D label volume
-                if has_orig:
+                labels = list(np.unique(data))
+                same_box = has_orig and len(labels) < 100
+                # has_orig is True only because same_box was passed as bb
+                # assumes a background image has more than 100 different values
+
+                if has_orig and not same_box:
+                    # special case: if has_orig and len(labels) < 255
+                    # means that same_box has been passed to bb
                     cmap = 'gray'
                 else:
                     cmap = ListedColormap(aget_cmap(labels))
@@ -198,7 +213,7 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
         raise Exception(msg)
     has_orig = not bg is None
 
-
+    same_box = True
 
     if has_orig:
         n_slices = 2 * n_slices
@@ -207,22 +222,34 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
     paths, paths_orig = {}, {}
 
     for axis in axes:
+        if same_box:
+            from nisnap._slices import __get_abs_minmax
+            same_bb = __get_abs_minmax(data, axis, slices[axis], margin = 5)
+            log.warning('Using bounding box: %s (axis %s)'%(same_bb[0][0], axis))
+
+        opt = {'slices': slices[axis],
+               'axis': axis,
+               'figsize': figsize[axis],
+               'pbar': pbar}
 
         if contours:
             # Rendering contours
-            path, bb = _snap_contours_(data,
-                slices[axis], axis=axis, bg=bg, figsize=figsize[axis], pbar=pbar)
+            if same_box:
+                opt['bb'] = same_bb
+
+            path, bb = _snap_contours_(data, bg=bg, **opt)
             paths[axis] = path
 
         else:
+            opt['bb'] = None if not same_box else same_bb
             # Rendering masks
-            path, bb = _snap_slices_(data,
-                slices[axis], axis=axis, bb=None, figsize=figsize[axis], pbar=pbar)
+            path, bb = _snap_slices_(data, **opt)
             paths[axis] = path
 
+
         if has_orig:
-            path, _ = _snap_slices_(bg,
-                slices[axis], axis=axis, bb=bb, figsize=figsize[axis], pbar=pbar)
+            opt['bb'] = bb if not same_box else same_bb
+            path, _ = _snap_slices_(bg, **opt)
             paths_orig[axis] = path
 
     pbar.update(n_slices)

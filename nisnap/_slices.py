@@ -17,6 +17,38 @@ def __get_lambdas__(data):
                    'z': lambda x: data[x,:,:]}
     return lambdas
 
+def __get_abs_minmax(data, axis, slices, margin = 5):
+    bb = {}
+    lambdas = __get_lambdas__(data)
+
+    for a, chunk in enumerate(slices):
+
+        bb[a] = []
+        for i, slice_index in enumerate(chunk):
+            test = np.flip(np.swapaxes(np.abs(lambdas[axis](int(slice_index))), 0, 1), 0)
+            xs, ys = np.where(test!=0)
+            bb[a].append((xs, ys))
+
+    min_xs, max_xs = 9999, 0
+    min_ys, max_ys = 9999, 0
+
+    for a, bba in bb.items():
+        for xs, ys in bba:
+            min_xs = min(min_xs, min(xs))
+            max_xs = max(max_xs, max(xs))
+            min_ys = min(min_ys, min(ys))
+            max_ys = max(max_ys, max(ys))
+
+    # Create mock bounding-box
+    res = {}
+    for a, bba in bb.items():
+        res[a] = []
+        for each in bba:
+            i = [int(min_xs - margin), int(max_xs + margin)],\
+                [int(min_ys - margin), int(max_ys + margin)]
+            res[a].append(i)
+    return res
+
 def __maxsize__(data):
     d = []
     lambdas = __get_lambdas__(data)
