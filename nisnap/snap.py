@@ -178,7 +178,9 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                     cmap = ListedColormap(aget_cmap(labels))
 
                 test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
-                ax.imshow(test, interpolation='none', cmap=cmap)
+                ax.imshow(test, interpolation='none', cmap=cmap, vmin=0,
+                    vmax=np.max(labels))
+
 
             ax.axis('off')
             ax.text(0, 0, '%i' %slice_index,
