@@ -26,15 +26,13 @@ def __get_T1__(x, e, experiment_id, sequence='T1_ALFA1'):
                      'xnat:mrScanData/type',
                      'xsiType']).data
     for s in scans:
-        scan = e.scan(s['xnat:mrscandata/id'])
 
-        if scan.attrs.get('type') in t2_lut_names and \
+        scan = e.scan(s['xnat:mrscandata/id'])
+        if scan.attrs.get('type').rstrip(' ') in t2_lut_names and \
             __is_valid_scan__(x, s):
                 t2_scans.append(scan.id())
-    assert(len(t2_lut_names) == 1)
-    #t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
+    assert(len(t2_scans) == 1)
     files = list(e.scan(t2_scans[0]).resource('NIFTI').files('*.nii.gz'))
-    print(files)
     return files[0]
 
 
@@ -48,10 +46,10 @@ def __get_T2__(x, e, experiment_id, sequence='T2_ALFA1'):
     for s in scans:
         scan = e.scan(s['xnat:mrscandata/id'])
 
-        if scan.attrs.get('type') in t2_lut_names and \
+        if scan.attrs.get('type').rstrip(' ') in t2_lut_names and \
             __is_valid_scan__(x, s):
                 t2_scans.append(scan.id())
-    assert(len(t2_lut_names) == 1)
+    assert(len(t2_scans) == 1)
     t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
     return t2_t1space
 
