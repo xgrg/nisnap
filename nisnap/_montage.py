@@ -115,6 +115,14 @@ def dissolve(fp1, fp2, opacity, fp3):
     image1 = Image.open(fp1)
     image2 = Image.open(fp2)
 
+    # pixdata = image1.load()
+    #
+    # width, height = image1.size
+    # for y in range(height):
+    #     for x in range(width):
+    #         if pixdata[x, y] == (0, 0, 0, 255):
+    #             pixdata[x, y] = (0, 0, 0, 0)
+
     # Make sure images got an alpha channel
     image1 = image1.convert("RGBA")
     if image2.mode == 'I':
