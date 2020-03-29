@@ -26,7 +26,7 @@ def create_parser():
     parser.add_argument('--opacity', required=False, type=int,
         help = 'opacity (in %%) of the segmentation maps when plotted over a background '\
         'image. Only used if a background image is provided.')
-    parser.add_argument('-o', '--output', required=False,
+    parser.add_argument('-o', '--output', required=True,
         help='snapshot will be stored in this file. If extension is .gif, snapshot'\
             ' will be rendered as an animation.') #, type=argparse.FileType('w'))
     parser.add_argument('--config', required=False, type=argparse.FileType('r'),
