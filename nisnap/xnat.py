@@ -18,7 +18,7 @@ def __is_valid_scan__(xnat_instance, scan) :
         valid = True
     return valid
 
-def __get_T1__(x, e, experiment_id, sequence='T1_ALFA1'):
+def __get_T1__(x, experiment_id, sequence='T1_ALFA1'):
     t2_lut_names = [sequence]
     t2_scans = []
     scans = x.array.mrscans(experiment_id=experiment_id,\
@@ -26,6 +26,7 @@ def __get_T1__(x, e, experiment_id, sequence='T1_ALFA1'):
                      'xnat:mrScanData/type',
                      'xsiType']).data
     for s in scans:
+        e = x.select.experiment(experiment_id)
 
         scan = e.scan(s['xnat:mrscandata/id'])
         if scan.attrs.get('type').rstrip(' ') in t2_lut_names and \
@@ -36,7 +37,7 @@ def __get_T1__(x, e, experiment_id, sequence='T1_ALFA1'):
     return files[0]
 
 
-def __get_T2__(x, e, experiment_id, sequence='T2_ALFA1'):
+def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
     t2_lut_names = [sequence]
     t2_scans = []
     scans = x.array.mrscans(experiment_id=experiment_id,\
@@ -44,6 +45,7 @@ def __get_T2__(x, e, experiment_id, sequence='T2_ALFA1'):
                      'xnat:mrScanData/type',
                      'xsiType']).data
     for s in scans:
+        e = x.select.experiment(experiment_id)
         scan = e.scan(s['xnat:mrscandata/id'])
 
         if scan.attrs.get('type').rstrip(' ') in t2_lut_names and \
@@ -52,6 +54,8 @@ def __get_T2__(x, e, experiment_id, sequence='T2_ALFA1'):
     assert(len(t2_scans) == 1)
     t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
     return t2_t1space
+
+
 
 def download_resources(config, experiment_id, resource_name,  destination,
     raw=True, cache=False):
@@ -111,7 +115,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
             fp1 = op.join(destination, '%s_T2_T1space.nii.gz'%experiment_id)
             filepaths.append(fp1)
             if not cache:
-                t2_t1space = __get_T2__(x, e, experiment_id)
+                t2_t1space = __get_T2__(x, experiment_id)
                 t2_t1space.get(fp1)
 
         else:
@@ -135,22 +139,33 @@ def download_resources(config, experiment_id, resource_name,  destination,
                 c.get(fp)
             filepaths.append(fp)
 
-    # elif 'FREESURFER6' in resource_name:
-    #     r = e.resource(resource_name)
-    #
-    #     for each in ['orig.mgz', 'aparc+aseg.mgz']:
-    #         c = list(r.files('*%s'%each))[0]
-    #         fp = op.join(destination, '%s_%s'%(experiment_id, each))
-    #         if not cache:
-    #             c.get(fp)
-    #         filepaths.append(fp)
+    elif 'FREESURFER6' in resource_name:
+        r = e.resource(resource_name)
+
+        if raw:
+            fp1 = op.join(destination, '%s_T1.nii.gz'%experiment_id)
+            filepaths.append(fp1)
+            if not cache:
+                t2_t1space = __get_T1__(x, experiment_id)
+                t2_t1space.get(fp1)
+        else:
+            filepaths.append(None)
+
+        for each in ['rawavg.mgz', 'aparc+aseg.mgz']: #['orig.mgz', 'aparc+aseg.mgz']:
+            c = list(r.files('*%s'%each))[0]
+            fp = op.join(destination, '%s_%s'%(experiment_id, each))
+            if not cache:
+                c.get(fp)
+            filepaths.append(fp)
+
+        print(filepaths)
 
     elif 'CAT12' in resource_name:
         if raw:
             fp1 = op.join(destination, '%s_T1.nii.gz'%experiment_id)
             filepaths.append(fp1)
             if not cache:
-                t2_t1space = __get_T1__(x, e, experiment_id)
+                t2_t1space = __get_T1__(x, experiment_id)
                 t2_t1space.get(fp1)
         else:
             filepaths.append(None)
@@ -282,6 +297,12 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     from . import snap
 
     filepaths = filepaths[1] if len(filepaths) == 2 else filepaths[1:]
+
+    if 'FREESURFER6' in resource_name:
+        from nisnap import _aseg as aseg
+        filepaths = aseg.__preproc_aseg__(filepaths[1], filepaths[0])
+
+
     snap.plot_segment(filepaths, axes=axes, bg=bg, opacity=opacity,
         animated=animated, savefig=fp, figsize=figsize, contours=contours,
         rowsize=rowsize, slices=slices, samebox=samebox)

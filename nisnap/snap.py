@@ -1,14 +1,13 @@
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
+
 import logging as log
 import tempfile, os
 import numpy as np
-from tqdm import tqdm
-from matplotlib.colors import ListedColormap
-from matplotlib import cm, colors
 
 format = '.png'
+
+def pick_labels(data, labels):
+    data2 = np.where(np.isin(data, labels), data, 0)
+    return data2
 
 def aget_cmap(labels=[]):
     import json
@@ -33,16 +32,21 @@ def plot_contours_in_slice(slice_seg, target_axis, labels=None):
     if labels is None: # if n_labels is not provided then take max from slice
         labels = list(np.unique(slice_seg))
 
+    from matplotlib.colors import ListedColormap
     cmap = ListedColormap(aget_cmap(labels))
+
 
     num_labels = len(cmap.colors)
     unique_labels = np.arange(num_labels, dtype='int16')
 
+    from matplotlib import cm, colors
     normalize_labels = colors.Normalize(vmin=0, vmax=num_labels, clip=True)
     seg_mapper = cm.ScalarMappable(norm=normalize_labels, cmap=cmap)
-    unique_labels_display = np.setdiff1d(unique_labels, 0)
+    unique_labels_display = np.array(unique_labels) #np.setdiff1d(unique_labels, 0)
+
     color_for_label = seg_mapper.to_rgba(unique_labels_display)
 
+    from matplotlib import pyplot as plt
     plt.sca(target_axis)
 
     for index, label in enumerate(unique_labels_display):
@@ -59,6 +63,8 @@ def plot_contours_in_slice(slice_seg, target_axis, labels=None):
     return
 
 def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
+    from matplotlib import pyplot as plt
+
     plt.style.use('dark_background')
 
     paths = []
@@ -126,6 +132,8 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
 
 
 def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
+    from matplotlib import pyplot as plt
+
     has_orig = not bb is None
 
     paths = []
@@ -175,9 +183,11 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                     # means that same_box has been passed to bb
                     cmap = 'gray'
                 else:
+                    from matplotlib.colors import ListedColormap
                     cmap = ListedColormap(aget_cmap(labels))
 
                 test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
+
                 ax.imshow(test, interpolation='none', cmap=cmap, vmin=0,
                     vmax=np.max(labels))
 
@@ -198,6 +208,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
 def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
         contours=False, figsize=None, samebox=False):
+    from matplotlib import pyplot as plt
 
     plt.rcParams['figure.facecolor'] = 'black'
     plt.rcParams.update({'figure.max_open_warning': 0})
@@ -217,6 +228,8 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
 
     if has_orig:
         n_slices = 2 * n_slices
+
+    from tqdm import tqdm
     pbar = tqdm(total=n_slices, leave=False)
 
     paths, paths_orig = {}, {}
@@ -267,6 +280,9 @@ def __stack_img__(filepaths):
     black_pixels_mask = np.all(data == [0, 0, 0], axis=-1)
     data2[black_pixels_mask] = 0
     return data2
+
+
+
 
 
 def plot_segment(filepaths, axes='xyz', bg=None, opacity=30, slices=None,
@@ -322,6 +338,9 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=30, slices=None,
     xnat.plot_segment : To plot segmentation maps directly providing their
         experiment_id on an XNAT instance
     """
+    import matplotlib
+    matplotlib.use('Agg')
+
     fp = savefig
     if savefig is None:
         if animated:

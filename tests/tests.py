@@ -28,7 +28,7 @@ class RunThemAll(unittest.TestCase):
 
         try:
             args = '/tmp/.xnat.cfg /tmp/.xnat.cfg /tmp/.xnat.cfg '\
-                '/tmp/.xnat.cfg /tmp/.xnat.cfg'
+                '/tmp/.xnat.cfg /tmp/.xnat.cfg -o /tmp/toto.jpg'
             args = parser.parse_args(args.split(' '))
             parse.check_logic(args)
         except Exception as e:
@@ -123,7 +123,7 @@ class RunThemAll(unittest.TestCase):
                         slices=range(100,110,2),
                         animated=animated, savefig=savefig)
 
-    def test_006(self):
+    def test_xnat_spm12_006(self):
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
             experiment_id='BBRCDEV_E02859',
@@ -140,7 +140,7 @@ class RunThemAll(unittest.TestCase):
             axes='x', opacity=50, slices=range(8,27,1), rowsize=5,
             animated=True, raw=False, contours=False, cache=False)
 
-    def test_008(self):
+    def test_xnat_cat12_008(self):
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
             experiment_id='BBRCDEV_E00375',
@@ -148,3 +148,13 @@ class RunThemAll(unittest.TestCase):
             axes='x', opacity=50, slices=range(160,180,3), rowsize=9,
             animated=False, contours=False, cache=False,
             samebox=True)
+
+    def test_xnat_freesurfer_009(self):
+        from nisnap import xnat
+        from nisnap._aseg import __picklabel_fs__
+        filepaths = xnat.download_resources(config='.xnat.cfg',
+            experiment_id='BBRCDEV_E00559',
+            resource_name='FREESURFER6', destination='/tmp/')
+
+        __picklabel_fs__(filepaths[-1], '/tmp/test.mgz', swap=True,
+            labels=[9,10,11,12,13,17,48,49,50,51,52,53])
