@@ -115,13 +115,7 @@ def dissolve(fp1, fp2, opacity, fp3):
     image1 = Image.open(fp1)
     image2 = Image.open(fp2)
 
-    # pixdata = image1.load()
-    #
-    # width, height = image1.size
-    # for y in range(height):
-    #     for x in range(width):
-    #         if pixdata[x, y] == (0, 0, 0, 255):
-    #             pixdata[x, y] = (0, 0, 0, 0)
+    im1_pix = image1.load()
 
     # Make sure images got an alpha channel
     image1 = image1.convert("RGBA")
@@ -131,8 +125,19 @@ def dissolve(fp1, fp2, opacity, fp3):
         image2 = image2.convert("RGBA")
 
     # alpha-blend the images with varying values of alpha
-    alphaBlended1 = Image.blend(image2, image1, alpha=opacity/100.0)
-    alphaBlended1.save(fp3, "PNG")
+    blended1 = Image.blend(image2, image1, alpha=opacity/100.0)
+    blended1_pix = blended1.load()
+    width, height = image1.size
+
+    for y in range(height):
+        for x in range(width):
+            if im1_pix[x, y] == (0, 0, 0):
+                blended1_pix[x, y] = (0, 0, 0, 0)
+
+    blended1 = Image.alpha_composite(image2, blended1)
+
+    blended1.save(fp3, "PNG")
+
 
 def create_gif(filepaths, fp):
     log.debug((filepaths, fp))

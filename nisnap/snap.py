@@ -134,10 +134,12 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
 def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     from matplotlib import pyplot as plt
 
-    has_orig = not bb is None
+    labels = list(np.unique(data))
+    has_bb = not bb is None
+    has_orig = len(labels) > 100 #not bb is None
 
     paths = []
-    if not has_orig:
+    if not has_bb:
         bb = {}
 
     fig = plt.figure(dpi=300, figsize=figsize)
@@ -151,7 +153,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     abs_index = 0
     for a, chunk in enumerate(slices):
 
-        if not has_orig:
+        if not has_bb:
             bb[a] = []
 
         for i, slice_index in enumerate(chunk):
@@ -160,7 +162,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                     label='%s_%s'%(axis, slice_index))
 
             test = np.flip(np.swapaxes(np.abs(lambdas[axis](int(slice_index))), 0, 1), 0)
-            if not has_orig:
+            if not has_bb:
                 xs, ys = np.where(test!=0)
                 bb[a].append((xs, ys))
             else:
@@ -173,23 +175,18 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                 ax.imshow((test * 255).astype(np.uint8), interpolation='none', )
 
             else: # standard 3D label volume
-                labels = list(np.unique(data))
-                same_box = has_orig and len(labels) < 100
-                # has_orig is True only because same_box was passed as bb
-                # assumes a background image has more than 100 different values
 
-                if has_orig and not same_box:
-                    # special case: if has_orig and len(labels) < 255
-                    # means that same_box has been passed to bb
-                    cmap = 'gray'
+                if has_orig:
+                    vmax, cmap = (None, 'gray')
                 else:
+                    vmax = np.max(labels)
                     from matplotlib.colors import ListedColormap
                     cmap = ListedColormap(aget_cmap(labels))
 
                 test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
 
-                ax.imshow(test, interpolation='none', cmap=cmap, vmin=0,
-                    vmax=np.max(labels))
+                ax.imshow(test, interpolation='none', cmap=cmap,
+                    vmin=0, vmax=vmax)
 
 
             ax.axis('off')
