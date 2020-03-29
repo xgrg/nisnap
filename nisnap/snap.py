@@ -285,7 +285,7 @@ def __stack_img__(filepaths):
 
 
 
-def plot_segment(filepaths, axes='xyz', bg=None, opacity=30, slices=None,
+def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
         animated=False, savefig=None, contours=False, rowsize=None,
         figsize=None, samebox=False):
     """Plots a set of segmentation maps/masks.

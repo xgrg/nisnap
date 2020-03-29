@@ -111,7 +111,7 @@ def check_logic(args):
             raise Exception(msg)
 
     if not args.opacity:
-        args.opacity = 10
+        args.opacity = 90
 
     if args.output.endswith('.gif') and ((args.config and args.nobg) or \
             (not args.config and not args.bg)):
