@@ -15,6 +15,7 @@ def aget_cmap(labels=[]):
     import os.path as op
     n_labels = len(labels)
     fp = op.join(op.dirname(nisnap.__file__), 'colormap.json')
+    #fp = '/tmp/macaque_hc.json'
     LUT = json.load(open(fp))
     LUT = {int(k): v for k,v in list(LUT.items())}
 
@@ -117,8 +118,9 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
             plot_contours_in_slice(test, ax, labels=labels)
             ax.axis('off')
 
-            ax.text(0, 0, '%i' %slice_index,
-                {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
+            # # display slice number
+            # ax.text(0, 0, '%i' %slice_index,
+            #     {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
 
             if not pbar is None:
                 pbar.update(1)
@@ -190,8 +192,9 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
 
             ax.axis('off')
-            ax.text(0, 0, '%i' %slice_index,
-                {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
+            # # display slice number
+            # ax.text(0, 0, '%i' %slice_index,
+            #     {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
 
             if not pbar is None:
                 pbar.update(1)
@@ -234,7 +237,7 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
     for axis in axes:
         if samebox:
             from nisnap._slices import __get_abs_minmax
-            same_bb = __get_abs_minmax(data, axis, slices[axis], margin = 5)
+            same_bb = __get_abs_minmax(data, axis, slices[axis], margin = 30)
             log.warning('Using bounding box: %s (axis %s)'%(same_bb[0][0], axis))
 
         opt = {'slices': slices[axis],

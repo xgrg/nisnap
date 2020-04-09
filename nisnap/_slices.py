@@ -39,13 +39,31 @@ def __get_abs_minmax(data, axis, slices, margin = 5):
             min_ys = min(min_ys, min(ys))
             max_ys = max(max_ys, max(ys))
 
+    # adapt for a nice 4:3 ratio
+    h = max_xs - min_xs + 2 * margin
+    w = max_ys - min_ys + 2 * margin
+    ratio = 1.77
+    if w > ratio * h:
+        margin_w = margin
+        margin_h = float((w/ratio - h) / 2.0 + margin)
+    else:
+        margin_w = float((h*ratio - w) / 2.0 + margin)
+        margin_h = margin
+    print(('w=', w,'h=', h,'mh=', margin_h,'mw=', margin_w,
+        'diff_xs', max_xs - min_xs, 'diff_ys', max_ys - min_ys))
     # Create mock bounding-box
+    r = (max_ys - min_ys + 2 * margin_w) / float(max_xs - min_xs + 2 * margin_h)
+
+    r = (max_ys + margin_w - max(min_ys - margin_w, 0)) / \
+        (max_xs + margin_h - max(min_xs - margin_h, 0))
+    print(r)
+
     res = {}
     for a, bba in bb.items():
         res[a] = []
         for each in bba:
-            i = [int(min_xs - margin), int(max_xs + margin)],\
-                [int(min_ys - margin), int(max_ys + margin)]
+            i = [int(max(min_xs - margin_h, 0)), int(max_xs + margin_h)],\
+                [int(max(min_ys - margin_w, 0)), int(max_ys + margin_w)]
             res[a].append(i)
     return res
 
