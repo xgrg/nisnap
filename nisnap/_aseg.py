@@ -22,7 +22,7 @@ def __picklabel_fs__(fp1, fp3, swap=True,
     print(fp1, fp3)
     klass(n1, affine, header=None).to_filename(fp3)
 
-def __preproc_aseg__(aseg_fp, rawavg_fp):
+def __preproc_aseg__(aseg_fp, rawavg_fp, labels=None):
     fp = aseg_fp.replace('.mgz', '_native.mgz')
     cmd = 'mri_label2vol --seg {aseg} --temp {raw} --o {aseg_T1space} '\
         ' --regheader {aseg}'
@@ -31,5 +31,7 @@ def __preproc_aseg__(aseg_fp, rawavg_fp):
                         aseg_T1space=fp))
 
     #deepnuclei = [9,10,11,12,13,17,48,49,50,51,52,53]
-    __picklabel_fs__(fp, fp, swap=False)
+    if labels is None:
+        labels=[9,10,11,12,13,17,48,49,50,51,52,53]
+    __picklabel_fs__(fp, fp, swap=False, labels=labels)
     return fp
