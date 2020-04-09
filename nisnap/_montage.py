@@ -143,6 +143,8 @@ def create_gif(filepaths, fp):
     log.debug((filepaths, fp))
     from PIL import Image
     images = [Image.open(each) for each in filepaths]
+    for i in range(0, 5):
+        images.insert(0, images[0])
     images[0].save(fp,
-        save_all=True, append_images=images[1:], optimize=False,
-        duration=100, loop=0)
+        save_all=True, append_images=images, optimize=False,
+        duration=200, loop=0)
