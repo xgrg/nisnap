@@ -77,7 +77,8 @@ def remove_empty_slices(data, slices, threshold=0):
                 black_pixels_mask = np.all(test == [0, 0, 0], axis=-1)
             else:
                 black_pixels_mask = np.all(test == 0, axis=-1)
-            if len(test) - len(black_pixels_mask[black_pixels_mask==True]) > threshold:
+            size = len(test) - len(black_pixels_mask[black_pixels_mask==True])
+            if size > threshold:
                 new_slices[axis].append(slice_index)
             else:
                 import logging as log
