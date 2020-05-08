@@ -1,6 +1,9 @@
 import tempfile
 import os
 
+
+freesurfer_reg_to_native = os.environ.get('FREESURFER_REG_TO_NATIVE', 1) == 1
+
 def __is_valid_scan__(xnat_instance, scan) :
     ''' Checks if a scan is valid according to a set of rules '''
     valid = False
@@ -151,12 +154,23 @@ def download_resources(config, experiment_id, resource_name,  destination,
         else:
             filepaths.append(None)
 
-        for each in ['rawavg.mgz', 'aparc+aseg.mgz']: #['orig.mgz', 'aparc+aseg.mgz']:
+        files = ['rawavg.mgz', 'aparc+aseg.mgz'] if freesurfer_reg_to_native\
+            else ['nu.mgz', 'aparc+aseg.mgz']
+
+        for each in files: #['orig.mgz', 'aparc+aseg.mgz']:
             c = list(r.files('*%s'%each))[0]
             fp = op.join(destination, '%s_%s'%(experiment_id, each))
             if not cache:
                 c.get(fp)
             filepaths.append(fp)
+
+        from nisnap import _aseg as aseg
+        aseg_fp = filepaths[2]
+        bg = filepaths[1]
+
+        aseg.__preproc_aseg__(aseg_fp, bg, cache=cache)
+        aseg.__swap_fs__(aseg_fp, cache=cache)
+        aseg.__swap_fs__(bg, cache=cache)
 
         print(filepaths)
 
@@ -262,7 +276,6 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
 
     """
 
-
     fp = savefig
     if savefig is None:
         if animated:
@@ -299,8 +312,20 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     filepaths = filepaths[1] if len(filepaths) == 2 else filepaths[1:]
 
     if 'FREESURFER6' in resource_name:
+        import logging as log
+        log.info('freesurfer_reg_to_native:', freesurfer_reg_to_native)
         from nisnap import _aseg as aseg
-        filepaths = aseg.__preproc_aseg__(filepaths[1], filepaths[0])
+        aseg_fp = filepaths[1]
+        if freesurfer_reg_to_native:
+            aseg_fp = aseg.__preproc_aseg__(aseg_fp, bg, cache=True)
+        else:
+            aseg_fp = aseg.__swap_fs__(aseg_fp, cache=True)
+            bg = aseg.__swap_fs__(filepaths[0], cache=True)
+
+        print(bg, aseg_fp)
+        filepaths = aseg.__picklabel_fs__(aseg_fp, labels=aseg.basal_ganglia_labels)
+        print(filepaths)
+
 
 
     snap.plot_segment(filepaths, axes=axes, bg=bg, opacity=opacity,

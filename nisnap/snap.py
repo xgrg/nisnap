@@ -1,16 +1,17 @@
 
 import logging as log
 import tempfile, os
-import numpy as np
 
 format = '.png'
 
 def pick_labels(data, labels):
+    import numpy as np
     data2 = np.where(np.isin(data, labels), data, 0)
     return data2
 
 def aget_cmap(labels=[]):
     import json
+    import numpy as np
     import nisnap
     import os.path as op
     n_labels = len(labels)
@@ -28,6 +29,7 @@ def aget_cmap(labels=[]):
 
 def plot_contours_in_slice(slice_seg, target_axis, labels=None):
     """Plots contour around the data in slice (after binarization)"""
+    import numpy as np
 
     if labels is None: # if n_labels is not provided then take max from slice
         labels = list(np.unique(slice_seg))
@@ -64,6 +66,8 @@ def plot_contours_in_slice(slice_seg, target_axis, labels=None):
 
 def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
     from matplotlib import pyplot as plt
+    import numpy as np
+
 
     plt.style.use('dark_background')
 
@@ -133,6 +137,8 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
 
 def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     from matplotlib import pyplot as plt
+    import numpy as np
+
 
     labels = list(np.unique(data))
     has_bb = not bb is None
@@ -269,6 +275,8 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
 
 def __stack_img__(filepaths):
     import nibabel as nib
+    import numpy as np
+
     stack = [np.asarray(nib.load(e).dataobj) for e in filepaths[:]]
 
     data = np.stack(stack, axis=-1)
@@ -279,12 +287,9 @@ def __stack_img__(filepaths):
     return data2
 
 
-
-
-
 def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
         animated=False, savefig=None, contours=False, rowsize=None,
-        figsize=None, samebox=False):
+        figsize=None, samebox=False, labels=None):
     """Plots a set of segmentation maps/masks.
 
     Parameters
@@ -336,6 +341,7 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
         experiment_id on an XNAT instance
     """
     import matplotlib
+    import numpy as np
     matplotlib.use('Agg')
 
     fp = savefig
