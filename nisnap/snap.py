@@ -298,7 +298,7 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
         Paths to segmentation maps (between 1 and 3). Must be of same dimensions
         and in same reference space.
 
-    axes: string, or a tuple of strings
+    axes: string, or a tuple of str
         Choose the direction of the cuts (among 'x', 'y', 'z')
 
     bg: None or str
@@ -335,6 +335,11 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
     samebox: boolean, optional
         If True, bounding box will be fixed. If False, adjusted for each slice.
 
+    labels: None or a tuple of int
+        If a list of labels is provided, the label volume will be filtered to
+        keep these labels only and remove the others.
+        (Works with a label volume only, not with RGB mode)
+
     See Also
     --------
     xnat.plot_segment : To plot segmentation maps directly providing their
@@ -363,6 +368,9 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
     if isinstance(filepaths, list): # RGB mode
         data = __stack_img__(filepaths)
     elif isinstance(filepaths, str): # 3D label volume
+        if not labels is None:
+            from nisnap.utils import aseg
+            filepaths = aseg.__picklabel_fs__(filepaths, labels=labels)
         data = np.asarray(nib.load(filepaths).dataobj)
 
     if bg is not None:
