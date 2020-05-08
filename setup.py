@@ -7,14 +7,15 @@ with open(op.join(this_directory, 'README.md')) as f:
     long_description = f.read()
 from nisnap import __version__
 
+
 setup(
   name = 'nisnap',
   install_requires=['coverage>=4.5',
     'nose>=1.3',
     'matplotlib>=3.1',
-    'pyxnat>=1.2.1.0.post3',
+    'pyxnat>=1.3',
     'tqdm>=4.31',
-    'nibabel>=2.3',
+    'nibabel>=2.0',
     'numpy>=1.16',
     'urllib3>=1.24',
     'ipython>=7.3'],
@@ -27,11 +28,12 @@ setup(
   author = 'Greg Operto',
   author_email = 'goperto@barcelonabeta.org',
   url = 'https://gitlab.com/xgrg/nisnap',
-  download_url = 'https://gitlab.com/xgrg/nisnap/-/archive/v0.1/nisnap-v0.1.tar.gz',
+  download_url = 'https://gitlab.com/xgrg/nisnap/-/archive/v0.3.3/nisnap-v0.3.3.tar.gz',
   classifiers = ['Intended Audience :: Science/Research',
       'Intended Audience :: Developers',
       'Topic :: Scientific/Engineering',
       'Operating System :: Unix',
       'Programming Language :: Python :: 3.7' ],
-  package_data={'nisnap': [ 'requirements.txt', 'README.md'], },
+  package_data={'nisnap': ['colormap.json']}
+
 )
