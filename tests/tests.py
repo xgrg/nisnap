@@ -131,7 +131,7 @@ class RunThemAll(unittest.TestCase):
             axes='x', opacity=100, slices=range(160,180,3), rowsize={'x':9},
             animated=False, contours=True, cache=True)
 
-    def test_007(self):
+    def test_007_ashs(self):
         figsize = {'x':(10,3)}
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
@@ -151,10 +151,15 @@ class RunThemAll(unittest.TestCase):
 
     def test_xnat_freesurfer_009(self):
         from nisnap import xnat
-        from nisnap._aseg import __picklabel_fs__
+        from nisnap import _aseg as aseg
         filepaths = xnat.download_resources(config='.xnat.cfg',
             experiment_id='BBRCDEV_E00559',
             resource_name='FREESURFER6', destination='/tmp/')
 
-        __picklabel_fs__(filepaths[-1], '/tmp/test.mgz', swap=True,
-            labels=[9,10,11,12,13,17,48,49,50,51,52,53])
+        aseg_fp = filepaths[-1]
+        aseg.__picklabel_fs__(aseg_fp, labels=[9,10,11,12,13,17,48,49,50,51,52,53])
+        aseg.__swap_fs__(aseg_fp)
+        try:
+            aseg.__preproc_aseg__(aseg_fp, filepaths[1])
+        except Exception as exc:
+            pass
