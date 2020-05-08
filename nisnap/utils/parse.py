@@ -135,13 +135,13 @@ def run(args):
 
     axes = tuple([e for e in args.axes])
     if args.config:
-        from . import xnat
+        from .. import xnat
         xnat.plot_segment(args.config.name, args.experiment, savefig=args.output,
             resource_name=args.resource, axes=axes, raw=not args.nobg,
             opacity=args.opacity, animated=args.output.endswith('.gif'),
             cache=args.cache, contours=args.contours, samebox=args.samebox)
     else:
-        from . import snap
+        from .. import snap
 
         fp = args.files[0].name if len(args.files) == 1 \
             else [e.name for e in args.files]

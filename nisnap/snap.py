@@ -15,7 +15,7 @@ def aget_cmap(labels=[]):
     import nisnap
     import os.path as op
     n_labels = len(labels)
-    fp = op.join(op.dirname(nisnap.__file__), 'colormap.json')
+    fp = op.join(op.dirname(nisnap.__file__), 'utils', 'colormap.json')
     LUT = json.load(open(fp))
     LUT = {int(k): v for k,v in list(LUT.items())}
 
@@ -150,7 +150,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
     fig = plt.figure(dpi=300, figsize=figsize)
 
-    from nisnap._slices import __get_lambdas__
+    from nisnap.utils.slices import __get_lambdas__
     lambdas = __get_lambdas__(data)
 
     _, path = tempfile.mkstemp(suffix='_%s%s'%(axis, format))
@@ -216,7 +216,7 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
     plt.rcParams['figure.facecolor'] = 'black'
     plt.rcParams.update({'figure.max_open_warning': 0})
 
-    from nisnap._slices import cut_slices, _fix_rowsize_, _fix_figsize_, __maxsize__
+    from nisnap.utils.slices import cut_slices, _fix_rowsize_, _fix_figsize_, __maxsize__
     rowsize = _fix_rowsize_(axes, rowsize)
     figsize = _fix_figsize_(axes, figsize)
 
@@ -239,7 +239,7 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
 
     for axis in axes:
         if samebox:
-            from nisnap._slices import __get_abs_minmax
+            from nisnap.utils.slices import __get_abs_minmax
             same_bb = __get_abs_minmax(data, axis, slices[axis], margin = 5)
             log.warning('Using bounding box: %s (axis %s)'%(same_bb[0][0], axis))
 
@@ -352,7 +352,7 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
             f, fp = tempfile.mkstemp(suffix=format)
         os.close(f)
 
-    from nisnap._parse import __check_axes__
+    from nisnap.utils.parse import __check_axes__
     axes = __check_axes__(axes)
 
     # Creating snapshots (along given axes and original if needed)
@@ -372,7 +372,7 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
         slices=slices, contours=contours, rowsize=rowsize, figsize=figsize,
         samebox=samebox)
 
-    from nisnap._montage import __montage__
+    from nisnap.utils.montage import __montage__
     has_orig = not bg is None
     __montage__(paths, paths_orig, axes, opacity, has_orig, animated, savefig=fp)
 

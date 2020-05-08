@@ -34,6 +34,6 @@ setup(
       'Topic :: Scientific/Engineering',
       'Operating System :: Unix',
       'Programming Language :: Python :: 3.7' ],
-  package_data={'nisnap': ['colormap.json']}
+  package_data={'nisnap': ['utils/colormap.json']}
 
 )

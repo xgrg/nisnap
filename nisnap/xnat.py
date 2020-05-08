@@ -164,7 +164,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
                 c.get(fp)
             filepaths.append(fp)
 
-        from nisnap import _aseg as aseg
+        from nisnap.utils import aseg
         aseg_fp = filepaths[2]
         bg = filepaths[1]
 
@@ -314,7 +314,7 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     if 'FREESURFER6' in resource_name:
         import logging as log
         log.info('freesurfer_reg_to_native:', freesurfer_reg_to_native)
-        from nisnap import _aseg as aseg
+        from nisnap.utils import aseg
         aseg_fp = filepaths[1]
         if freesurfer_reg_to_native:
             aseg_fp = aseg.__preproc_aseg__(aseg_fp, bg, cache=True)

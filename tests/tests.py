@@ -1,5 +1,5 @@
 import unittest
-from nisnap import _parse as parse
+from nisnap.utils import parse
 from nisnap import xnat
 import nisnap
 
@@ -151,10 +151,10 @@ class RunThemAll(unittest.TestCase):
 
     def test_xnat_freesurfer_009(self):
         from nisnap import xnat
-        from nisnap import _aseg as aseg
+        from nisnap.utils import aseg
         filepaths = xnat.download_resources(config='.xnat.cfg',
-            experiment_id='BBRCDEV_E00559',
-            resource_name='FREESURFER6', destination='/tmp/')
+                experiment_id='BBRCDEV_E00559',
+                resource_name='FREESURFER6', destination='/tmp/')        
 
         aseg_fp = filepaths[-1]
         aseg.__picklabel_fs__(aseg_fp, labels=[9,10,11,12,13,17,48,49,50,51,52,53])

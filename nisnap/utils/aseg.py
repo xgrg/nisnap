@@ -45,6 +45,8 @@ def __preproc_aseg__(aseg_fp, rawavg_fp, cache=False):
         msg = 'FreeSurfer command `mri_label2vol` failed. Please check that '\
             'FreeSurfer is correctly installed and configured. (Command '\
             'returned %s)'%ans
-        raise Exception(msg)
+        import logging as log
+        log.error(msg)
+        return fp
 
     return fp

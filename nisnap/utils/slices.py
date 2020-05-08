@@ -95,7 +95,7 @@ def _fix_rowsize_(axes, rowsize=None):
     elif isinstance(rowsize, int):
         rs = {e :{'x': rowsize, 'y': rowsize, 'z':rowsize}[e] for e in axes}
     elif isinstance(rowsize, dict):
-        from nisnap._parse import __check_axes__
+        from nisnap.utils.parse import __check_axes__
         rs = {__check_axes__(e)[0]:rowsize[e] for e in axes}
     else:
         raise TypeError('rowsize should be an int or a dict')
@@ -111,7 +111,7 @@ def _fix_figsize_(axes, figsize=None):
     elif isinstance(figsize, (list, tuple)) and len(figsize) == 2:
         fs = {each: figsize for each in axes}
     elif isinstance(figsize, dict):
-        from nisnap._parse import __check_axes__
+        from nisnap.utils.parse import __check_axes__
         fs = {__check_axes__(e)[0]:figsize[e] for e in axes}
     else:
         raise TypeError('figsize should be a tuple/list of size 2 or a dict')
