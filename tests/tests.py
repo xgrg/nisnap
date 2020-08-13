@@ -12,10 +12,9 @@ class RunThemAll(unittest.TestCase):
         os.system('touch /tmp/.xnat.cfg')
         os.system('touch /tmp/toto.jpg')
         args = ['/tmp/.xnat.cfg', '/tmp/.xnat.cfg',
-            '/tmp/.xnat.cfg', '-o', '/tmp/toto.jpg']
+                '/tmp/.xnat.cfg', '-o', '/tmp/toto.jpg']
         args = parser.parse_args(args)
         parse.check_logic(args)
-
 
         try:
             args = '/tmp/.xnat.cfg /tmp/.xnat.cfg /tmp/.xnat.cfg '\
@@ -44,7 +43,8 @@ class RunThemAll(unittest.TestCase):
         parse.check_logic(args)
 
         try:
-            args = '--config /tmp/.xnat.cfg -e BBRC_E000 --nobg --opacity 10 -o /tmp/toto.jpg'
+            args = '--config /tmp/.xnat.cfg -e BBRC_E000 --nobg --opacity 10 '\
+                   '-o /tmp/toto.jpg'
             args = parser.parse_args(args.split(' '))
             parse.check_logic(args)
         except Exception as e:
@@ -60,7 +60,6 @@ class RunThemAll(unittest.TestCase):
             print(e)
             pass
 
-
         args = '--config /tmp/.xnat.cfg -e BBRC_E000 -o /tmp/toto.jpg'
         args = parser.parse_args(args.split(' '))
         parse.check_logic(args)
@@ -70,7 +69,8 @@ class RunThemAll(unittest.TestCase):
         parse.check_logic(args)
 
         try:
-            args = '--config /tmp/.xnat.cfg -e BBRC_E000 --nobg -o /tmp/toto.gif'
+            args = '--config /tmp/.xnat.cfg -e BBRC_E000 --nobg -o '\
+                   '/tmp/toto.gif'
             args = parser.parse_args(args.split(' '))
             parse.check_logic(args)
         except Exception as e:
@@ -82,12 +82,14 @@ class RunThemAll(unittest.TestCase):
         parse.check_logic(args)
 
     def test_002_snap_files(self):
-        xnat.download_resources(config='.xnat.cfg', experiment_id='BBRCDEV_E02859',
-            resource_name='SPM12_SEGMENT_T2T1_COREG3', destination='/tmp',
-            raw=True)
+        xnat.download_resources(config='.xnat.cfg',
+                                experiment_id='BBRCDEV_E02859',
+                                resource_name='SPM12_SEGMENT_T2T1_COREG3',
+                                destination='/tmp', raw=True)
         parser = parse.create_parser()
         args = '--bg /tmp/BBRCDEV_E02859_T2_T1space.nii.gz '\
-           '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c1.nii.gz /tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c2.nii.gz '\
+           '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c1.nii.gz'\
+           ' /tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_filled_c2.nii.gz '\
            '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c3.nii.gz -o /tmp/test.png --axes x --opacity 30'
         args = parser.parse_args(args.split(' '))
         parse.run(args)
@@ -101,68 +103,75 @@ class RunThemAll(unittest.TestCase):
 
     def test_004(self):
         xnat.plot_segment(config='.xnat.cfg',
-            experiment_id='BBRCDEV_E02859', axes='x', raw=False,
-            animated=False, savefig=None)
+                          experiment_id='BBRCDEV_E02859', axes='x', raw=False,
+                          animated=False, savefig=None)
 
     def test_005(self):
         filepaths = xnat.download_resources(config='.xnat.cfg',
-            experiment_id='BBRCDEV_E02859',
+                                            experiment_id='BBRCDEV_E02859',
             resource_name='SPM12_SEGMENT_T2T1_COREG3', destination='/tmp',
             raw=True)
         nisnap.plot_segment(filepaths[1:], bg=None, axes='x',
-            slices=range(100, 110, 2),
-            animated=False, savefig='/tmp/toto')
+                            slices=range(100, 110, 2),
+                            animated=False, savefig='/tmp/toto')
         nisnap.plot_segment(filepaths[1:], bg=None, axes='x',
-            slices={'x':range(100, 110, 2)},
-            animated=False, savefig='/tmp/toto')
+                            slices={'x': range(100, 110, 2)},
+                            animated=False, savefig='/tmp/toto')
         for bg in [None, filepaths[0]]:
             for animated in [True, False]:
                 for savefig in [None, '/tmp/toto']:
-                    print('bg:', bg, 'animated:', animated, 'savefig:', savefig)
+                    print('bg:', bg, 'animated:', animated, 'savefig:',
+                          savefig)
                     nisnap.plot_segment(filepaths[1:], bg=bg, axes='x',
-                        slices=range(100,110,2),
-                        animated=animated, savefig=savefig)
+                                        slices=range(100, 110, 2),
+                                        animated=animated, savefig=savefig)
 
     def test_xnat_spm12_006(self):
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
-            experiment_id='BBRCDEV_E02859',
-            resource_name='SPM12_SEGMENT_T2T1_COREG3',
-            axes='x', opacity=100, slices=range(160,180,3), rowsize={'x':9},
-            animated=False, contours=True, cache=True)
+                          experiment_id='BBRCDEV_E02859',
+                          resource_name='SPM12_SEGMENT_T2T1_COREG3',
+                          axes='x', opacity=100, slices=range(160, 180, 3),
+                          rowsize={'x': 9},
+                          animated=False, contours=True, cache=True)
 
     def test_007_ashs(self):
-        figsize = {'x':(10,3)}
+        figsize = {'x': (10, 3)}
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
-            experiment_id='BBRCDEV_E02443',
-            resource_name='ASHS', figsize=figsize,
-            axes='x', opacity=50, slices=range(8,27,1), rowsize=5,
-            animated=True, raw=False, contours=False, cache=False)
+                          experiment_id='BBRCDEV_E02443',
+                          resource_name='ASHS', figsize=figsize,
+                          axes='x', opacity=50, slices=range(8, 27, 1),
+                          rowsize=5, animated=True, raw=False, contours=False,
+                          cache=False)
 
     def test_xnat_cat12_008(self):
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
-            experiment_id='BBRCDEV_E00375',
-            resource_name='CAT12_SEGMENT', figsize=(10,3),
-            axes='x', opacity=50, slices=range(160,180,3), rowsize=9,
-            animated=False, contours=False, cache=False,
-            samebox=True)
+                          experiment_id='BBRCDEV_E00375',
+                          resource_name='CAT12_SEGMENT', figsize=(10, 3),
+                          axes='x', opacity=50, slices=range(160, 180, 3),
+                          rowsize=9, animated=False, contours=False,
+                          cache=False, samebox=True)
 
     def test_xnat_freesurfer_009(self):
         from nisnap import xnat, snap
         from nisnap.utils import aseg
         filepaths = xnat.download_resources(config='.xnat.cfg',
-                experiment_id='BBRCDEV_E00559',
-                resource_name='FREESURFER6', destination='/tmp/')
+                                            experiment_id='BBRCDEV_E00559',
+                                            resource_name='FREESURFER6',
+                                            destination='/tmp/')
 
         aseg_fp = filepaths[-1]
-        aseg.__picklabel_fs__(aseg_fp, labels=[9,10,11,12,13,17,48,49,50,51,52,53])
+        labels = [9, 10, 11, 12, 13, 17, 48, 49, 50, 51, 52, 53]
+        aseg.__picklabel_fs__(aseg_fp,
+                              labels=labels)
         aseg.__swap_fs__(aseg_fp)
         try:
             aseg.__preproc_aseg__(aseg_fp, filepaths[1])
-        except Exception as exc:
+        except Exception:
             pass
         snap.plot_segment(aseg_fp, bg=filepaths[1], axes='x', opacity=70,
-            rowsize=4, figsize=(15,15), savefig='/tmp/test.png', animated=False,
-            samebox=True, labels=[9,17,48,53])
+                          rowsize=4, figsize=(15, 15), savefig='/tmp/test.png',
+                          animated=False,
+                          samebox=True, labels=[9, 17, 48, 53])
