@@ -63,6 +63,66 @@ def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
     return t2_t1space
 
 
+def __download_freesurfer6__(x, experiment_id, destination,
+                                resource_name='FREESURFER6',
+                                raw=True, cache=False): #, labels=None):
+    import os.path as op
+    filepaths = []
+    e = x.select.experiment(experiment_id)
+    r = e.resource(resource_name)
+
+    if raw:
+        fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
+        filepaths.append(fp1)
+        if not cache:
+            t2_t1space = __get_T1__(x, experiment_id)
+            t2_t1space.get(fp1)
+    else:
+        filepaths.append(None)
+
+    files = ['rawavg.mgz', 'aparc+aseg.mgz'] if freesurfer_reg_to_native\
+        else ['nu.mgz', 'aparc+aseg.mgz']
+
+    for each in files:  # ['orig.mgz', 'aparc+aseg.mgz']:
+        c = list(r.files('*%s' % each))[0]
+        fp = op.join(destination, '%s_%s' % (experiment_id, each))
+        if not cache:
+            c.get(fp)
+        filepaths.append(fp)
+
+    from nisnap.utils import aseg
+    aseg_fp = filepaths[2]
+    bg = filepaths[1]
+
+    # Note that the filepaths for these new steps are not stored/returned
+    aseg.__preproc_aseg__(aseg_fp, bg, cache=cache)
+    aseg.__swap_fs__(aseg_fp, cache=cache)
+    aseg.__swap_fs__(bg, cache=cache)
+
+    import logging as log
+    log.info('freesurfer_reg_to_native:', freesurfer_reg_to_native)
+
+    bg = filepaths[0]
+
+    aseg_fp = filepaths[2]
+
+    # Files were created just before
+    # So we only need to fetch their names (with cache=True)
+    if freesurfer_reg_to_native:
+        aseg_fp = aseg.__preproc_aseg__(aseg_fp, bg, cache=True)
+    else:
+        aseg_fp = aseg.__swap_fs__(aseg_fp, cache=True)
+        bg = aseg.__swap_fs__(filepaths[1], cache=True)
+
+    print(bg, aseg_fp)
+    filepaths = [bg]
+    # if labels is not None:
+    #     aseg_fp = aseg.__picklabel_fs__(aseg_fp, labels=labels)
+    filepaths.append(aseg_fp)
+    print(filepaths)
+    return filepaths
+
+
 def download_resources(config, experiment_id, resource_name,  destination,
                        raw=True, cache=False):
     """Download a given experiment/resource from an XNAT instance in a local
@@ -151,36 +211,8 @@ def download_resources(config, experiment_id, resource_name,  destination,
             filepaths.append(fp)
 
     elif 'FREESURFER6' in resource_name:
-        r = e.resource(resource_name)
-
-        if raw:
-            fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
-            filepaths.append(fp1)
-            if not cache:
-                t2_t1space = __get_T1__(x, experiment_id)
-                t2_t1space.get(fp1)
-        else:
-            filepaths.append(None)
-
-        files = ['rawavg.mgz', 'aparc+aseg.mgz'] if freesurfer_reg_to_native\
-            else ['nu.mgz', 'aparc+aseg.mgz']
-
-        for each in files:  # ['orig.mgz', 'aparc+aseg.mgz']:
-            c = list(r.files('*%s' % each))[0]
-            fp = op.join(destination, '%s_%s' % (experiment_id, each))
-            if not cache:
-                c.get(fp)
-            filepaths.append(fp)
-
-        from nisnap.utils import aseg
-        aseg_fp = filepaths[2]
-        bg = filepaths[1]
-
-        aseg.__preproc_aseg__(aseg_fp, bg, cache=cache)
-        aseg.__swap_fs__(aseg_fp, cache=cache)
-        aseg.__swap_fs__(bg, cache=cache)
-
-        print(filepaths)
+        filepaths = __download_freesurfer6__(x, experiment_id, destination,
+                                                resource_name, raw, cache)
 
     elif 'CAT12' in resource_name:
         if raw:
@@ -200,6 +232,16 @@ def download_resources(config, experiment_id, resource_name,  destination,
             if not cache:
                 c.get(fp)
             filepaths.append(fp)
+
+    # If files missing with cache set to True, raise Exception
+    if cache:
+        for f in filepaths:
+            if f is None and not raw:
+                continue
+            if not op.isfile(f):
+                msg = 'No such file: \'%s\'. Retry with cache set to False.'\
+                        % f
+                raise FileNotFoundError(msg)
 
     return filepaths
 
@@ -285,6 +327,12 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         filepaths
 
     """
+    if animated and not raw:
+        msg = 'animated cannot be True with raw set to False. Switching raw'\
+                ' to True.'
+        import logging as log
+        log.warning(msg)
+        raw = True
 
     fp = savefig
     if savefig is None:
@@ -297,49 +345,18 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
 
     dest = tempfile.gettempdir()
     # Downloading resources
-    filepaths = download_resources(config, experiment_id, resource_name, dest,
-                                   raw=raw, cache=cache)
-
-    # If files missing with cache set to True, raise Exception
-    if cache:
-        for f in filepaths:
-            import os.path as op
-            if f is None and not raw:
-                continue
-            if not op.isfile(f):
-                msg = 'No such file: \'%s\'. Retry with cache set to False.'\
-                        % f
-                raise FileNotFoundError(msg)
+    try:
+        filepaths = download_resources(config, experiment_id, resource_name, dest,
+                                       raw=raw, cache=cache)
+    except FileNotFoundError as exc:
+        msg = '{0}. Retry with cache set to False.'.format(exc)
+        raise FileNotFoundError(msg)
 
     bg = filepaths[0]
 
-    if animated and not raw:
-        msg = 'animated cannot be True with raw set to False. Switching raw'\
-                ' to True.'
-        import logging as log
-        log.warning(msg)
-        raw = True
-
-    from . import snap
-
     filepaths = filepaths[1] if len(filepaths) == 2 else filepaths[1:]
 
-    if 'FREESURFER6' in resource_name:
-        import logging as log
-        log.info('freesurfer_reg_to_native:', freesurfer_reg_to_native)
-        from nisnap.utils import aseg
-        aseg_fp = filepaths[1]
-        if freesurfer_reg_to_native:
-            aseg_fp = aseg.__preproc_aseg__(aseg_fp, bg, cache=True)
-        else:
-            aseg_fp = aseg.__swap_fs__(aseg_fp, cache=True)
-            bg = aseg.__swap_fs__(filepaths[0], cache=True)
-
-        print(bg, aseg_fp)
-        filepaths = aseg.__picklabel_fs__(aseg_fp,
-                                          labels=aseg.basal_ganglia_labels)
-        print(filepaths)
-
+    from . import snap
     snap.plot_segment(filepaths, axes=axes, bg=bg, opacity=opacity,
                       animated=animated, savefig=fp, figsize=figsize,
                       contours=contours, rowsize=rowsize, slices=slices,
