@@ -4,37 +4,40 @@ import os
 
 freesurfer_reg_to_native = os.environ.get('FREESURFER_REG_TO_NATIVE', 1) == 1
 
-def __is_valid_scan__(xnat_instance, scan) :
+
+def __is_valid_scan__(xnat_instance, scan):
     ''' Checks if a scan is valid according to a set of rules '''
     valid = False
     import fnmatch
-    prefix = [i.split('/')[0] for i in scan.keys() if fnmatch.fnmatch(i,'*scandata/id')][0]
-    if not prefix :
-            raise Exception
+    prefix = [i.split('/')[0] for i in scan.keys()
+              if fnmatch.fnmatch(i, '*scandata/id')][0]
+    if not prefix:
+        raise Exception
+    exp = xnat_instance.select.experiment(scan['ID'])
+    dt = exp.scan(scan['%s/id' % prefix]).datatype()
+    datatypes = ['xnat:mrScanData', 'xnat:petScanData', 'xnat:ctScanData']
     if scan['%s/id' % prefix].isdigit() \
             and not scan['%s/id' % prefix].startswith('0') \
             and scan['%s/quality' % prefix] == 'usable' \
-            and xnat_instance.select.experiment(scan['ID']).scan(scan['%s/id' % prefix]).datatype() in\
-                                        ['xnat:mrScanData',
-                                         'xnat:petScanData',
-                                         'xnat:ctScanData'] :
+            and dt in datatypes:
         valid = True
     return valid
+
 
 def __get_T1__(x, experiment_id, sequence='T1_ALFA1'):
     t2_lut_names = [sequence]
     t2_scans = []
-    scans = x.array.mrscans(experiment_id=experiment_id,\
-            columns=['xnat:mrScanData/quality',
-                     'xnat:mrScanData/type',
-                     'xsiType']).data
+    scans = x.array.mrscans(experiment_id=experiment_id,
+                            columns=['xnat:mrScanData/quality',
+                                     'xnat:mrScanData/type',
+                                     'xsiType']).data
     for s in scans:
         e = x.select.experiment(experiment_id)
 
         scan = e.scan(s['xnat:mrscandata/id'])
-        if scan.attrs.get('type').rstrip(' ') in t2_lut_names and \
-            __is_valid_scan__(x, s):
-                t2_scans.append(scan.id())
+        if scan.attrs.get('type').rstrip(' ') in t2_lut_names and\
+           __is_valid_scan__(x, s):
+            t2_scans.append(scan.id())
     assert(len(t2_scans) == 1)
     files = list(e.scan(t2_scans[0]).resource('NIFTI').files('*.nii.gz'))
     return files[0]
@@ -43,25 +46,25 @@ def __get_T1__(x, experiment_id, sequence='T1_ALFA1'):
 def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
     t2_lut_names = [sequence]
     t2_scans = []
-    scans = x.array.mrscans(experiment_id=experiment_id,\
-            columns=['xnat:mrScanData/quality',
-                     'xnat:mrScanData/type',
-                     'xsiType']).data
+    scans = x.array.mrscans(experiment_id=experiment_id,
+                            columns=['xnat:mrScanData/quality',
+                                     'xnat:mrScanData/type',
+                                     'xsiType']).data
     for s in scans:
         e = x.select.experiment(experiment_id)
         scan = e.scan(s['xnat:mrscandata/id'])
 
-        if scan.attrs.get('type').rstrip(' ') in t2_lut_names and \
-            __is_valid_scan__(x, s):
-                t2_scans.append(scan.id())
+        if scan.attrs.get('type').rstrip(' ') in t2_lut_names and\
+                __is_valid_scan__(x, s):
+            t2_scans.append(scan.id())
     assert(len(t2_scans) == 1)
-    t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'%t2_scans[0]))[0]
+    t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'
+                                               % t2_scans[0]))[0]
     return t2_t1space
 
 
-
 def download_resources(config, experiment_id, resource_name,  destination,
-    raw=True, cache=False):
+                       raw=True, cache=False):
     """Download a given experiment/resource from an XNAT instance in a local
     destination folder.
 
@@ -115,7 +118,8 @@ def download_resources(config, experiment_id, resource_name,  destination,
     if 'SPM12' in resource_name:
 
         if raw:
-            fp1 = op.join(destination, '%s_T2_T1space.nii.gz'%experiment_id)
+            fp1 = op.join(destination, '%s_T2_T1space.nii.gz' % experiment_id)
+            # fp1 = op.join(destination, '%s_T1.nii.gz'%experiment_id)
             filepaths.append(fp1)
             if not cache:
                 t2_t1space = __get_T2__(x, experiment_id)
@@ -125,10 +129,13 @@ def download_resources(config, experiment_id, resource_name,  destination,
             filepaths.append(None)
 
         r = e.resource(resource_name)
-        for each in ['c1', 'c2', 'c3']:
-            c = list(r.files('%s*.nii.gz'%each))[0]
-            fp = op.join(destination, '%s_%s_%s.nii.gz'\
-                %(experiment_id, resource_name, each))
+        files = ['c1', 'c2', 'c3']
+        if resource_name == 'SPM12_SEGMENT_T2T1_COREG3':
+            files = ['c1', 'filled_c2', 'c3']
+        for each in files:
+            c = list(r.files('%s*.nii.gz' % each))[0]
+            fp = op.join(destination, '%s_%s_%s.nii.gz'
+                                      % (experiment_id, resource_name, each))
             if not cache:
                 c.get(fp)
             filepaths.append(fp)
@@ -136,8 +143,9 @@ def download_resources(config, experiment_id, resource_name,  destination,
     elif resource_name == 'ASHS':
         r = e.resource(resource_name)
         for each in ['tse.nii.gz', 'left_lfseg_corr_nogray.nii.gz']:
-            c = list(r.files('*%s'%each))[0]
-            fp = op.join(destination, '%s_%s_%s'%(experiment_id, resource_name, each))
+            c = list(r.files('*%s' % each))[0]
+            fp = op.join(destination, '%s_%s_%s' % (experiment_id,
+                                                    resource_name, each))
             if not cache:
                 c.get(fp)
             filepaths.append(fp)
@@ -146,7 +154,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
         r = e.resource(resource_name)
 
         if raw:
-            fp1 = op.join(destination, '%s_T1.nii.gz'%experiment_id)
+            fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
             filepaths.append(fp1)
             if not cache:
                 t2_t1space = __get_T1__(x, experiment_id)
@@ -157,9 +165,9 @@ def download_resources(config, experiment_id, resource_name,  destination,
         files = ['rawavg.mgz', 'aparc+aseg.mgz'] if freesurfer_reg_to_native\
             else ['nu.mgz', 'aparc+aseg.mgz']
 
-        for each in files: #['orig.mgz', 'aparc+aseg.mgz']:
-            c = list(r.files('*%s'%each))[0]
-            fp = op.join(destination, '%s_%s'%(experiment_id, each))
+        for each in files:  # ['orig.mgz', 'aparc+aseg.mgz']:
+            c = list(r.files('*%s' % each))[0]
+            fp = op.join(destination, '%s_%s' % (experiment_id, each))
             if not cache:
                 c.get(fp)
             filepaths.append(fp)
@@ -176,7 +184,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
 
     elif 'CAT12' in resource_name:
         if raw:
-            fp1 = op.join(destination, '%s_T1.nii.gz'%experiment_id)
+            fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
             filepaths.append(fp1)
             if not cache:
                 t2_t1space = __get_T1__(x, experiment_id)
@@ -186,9 +194,9 @@ def download_resources(config, experiment_id, resource_name,  destination,
 
         r = e.resource(resource_name)
         for each in ['p1', 'p2', 'p3']:
-            c = list(r.files('mri/%s*.nii.gz'%each))[0]
-            fp = op.join(destination, '%s_%s_%s.nii.gz'\
-                %(experiment_id, resource_name, each))
+            c = list(r.files('mri/%s*.nii.gz' % each))[0]
+            fp = op.join(destination, '%s_%s_%s.nii.gz'
+                                      % (experiment_id, resource_name, each))
             if not cache:
                 c.get(fp)
             filepaths.append(fp)
@@ -197,9 +205,10 @@ def download_resources(config, experiment_id, resource_name,  destination,
 
 
 def plot_segment(config, experiment_id, savefig=None, slices=None,
-    resource_name='SPM12_SEGMENT_T2T1_COREG',
-    axes='xyz', raw=True, opacity=10, animated=False, rowsize=None,
-    figsize=None, contours=False, cache=False, samebox=False):
+                 resource_name='SPM12_SEGMENT_T2T1_COREG',
+                 axes='xyz', raw=True, opacity=10, animated=False,
+                 rowsize=None, figsize=None, contours=False, cache=False,
+                 samebox=False):
     """Download a given experiment/resource from an XNAT instance and create
     snapshots of this resource along a selected set of slices.
 
@@ -213,9 +222,9 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         raw anatomical image.
 
     savefig: string, optional
-        Filepath where the resulting snapshot will be created. If None is given,
-        a temporary file will be created and/or the result will be displayed
-        inline in a Jupyter Notebook.
+        Filepath where the resulting snapshot will be created. If None is
+        given, a temporary file will be created and/or the result will be
+        displayed inline in a Jupyter Notebook.
 
     slices: None, or a tuple of floats
         The indexes of the slices that will be rendered. If None is given, the
@@ -234,8 +243,9 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         the segmentation maps will be rendered only. Default: True
 
     opacity: integer, optional
-        The opacity (in %) of the segmentation maps when plotted over a background
-        image. Only used if a background image is provided. Default: 10
+        The opacity (in %) of the segmentation maps when plotted over a
+        background image. Only used if a background image is provided.
+        Default: 10
 
     animated: boolean, optional
         If True, the snapshot will be rendered as an animated GIF.
@@ -288,21 +298,24 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     dest = tempfile.gettempdir()
     # Downloading resources
     filepaths = download_resources(config, experiment_id, resource_name, dest,
-        raw=raw, cache=cache)
+                                   raw=raw, cache=cache)
 
     # If files missing with cache set to True, raise Exception
     if cache:
         for f in filepaths:
             import os.path as op
-            if f is None and not raw: continue
+            if f is None and not raw:
+                continue
             if not op.isfile(f):
-                msg = 'No such file: \'%s\'. Retry with cache set to False.'%f
+                msg = 'No such file: \'%s\'. Retry with cache set to False.'\
+                        % f
                 raise FileNotFoundError(msg)
 
     bg = filepaths[0]
 
     if animated and not raw:
-        msg = 'animated cannot be True with raw set to False. Switching raw to True.'
+        msg = 'animated cannot be True with raw set to False. Switching raw'\
+                ' to True.'
         import logging as log
         log.warning(msg)
         raw = True
@@ -323,14 +336,14 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
             bg = aseg.__swap_fs__(filepaths[0], cache=True)
 
         print(bg, aseg_fp)
-        filepaths = aseg.__picklabel_fs__(aseg_fp, labels=aseg.basal_ganglia_labels)
+        filepaths = aseg.__picklabel_fs__(aseg_fp,
+                                          labels=aseg.basal_ganglia_labels)
         print(filepaths)
 
-
-
     snap.plot_segment(filepaths, axes=axes, bg=bg, opacity=opacity,
-        animated=animated, savefig=fp, figsize=figsize, contours=contours,
-        rowsize=rowsize, slices=slices, samebox=samebox)
+                      animated=animated, savefig=fp, figsize=figsize,
+                      contours=contours, rowsize=rowsize, slices=slices,
+                      samebox=samebox)
 
     if savefig is None:
         # Return image

@@ -1,6 +1,7 @@
 import os
 
-basal_ganglia_labels = [9,10,11,12,13,17,48,49,50,51,52,53]
+basal_ganglia_labels = [9, 10, 11, 12, 13, 17, 48, 49, 50, 51, 52, 53]
+
 
 def __process_img__(ifp, ofp, func, **kwargs):
     import nibabel as nib
@@ -44,7 +45,7 @@ def __preproc_aseg__(aseg_fp, rawavg_fp, cache=False):
     if ans != 0:
         msg = 'FreeSurfer command `mri_label2vol` failed. Please check that '\
             'FreeSurfer is correctly installed and configured. (Command '\
-            'returned %s)'%ans
+            'returned %s)' % ans
         import logging as log
         log.error(msg)
         return fp

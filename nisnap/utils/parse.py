@@ -3,15 +3,17 @@ def create_parser():
     import argparse
     from argparse import RawTextHelpFormatter
 
-    desc = 'Create snapshots from segmentation maps. \n\nData can be downloaded '\
-        'from an XNAT instance or passed as arguments.\n'
+    desc = 'Create snapshots from segmentation maps. \n\nData can be '\
+        'downloaded from an XNAT instance or passed as arguments.\n'
 
-    desc = desc + '\nnisnap is distributed in the hope that it will be useful, '\
-     'but WITHOUT ANY WARRANTY. \nSubmit issues/comments/PR at '\
-     'http://gitlab.com/xgrg/nisnap.\n\n'\
-     'Author: Greg Operto - BarcelonaBeta Brain Research Center (2020)'
+    desc = desc + '\nnisnap is distributed in the hope that it will be useful'\
+                  ', but WITHOUT ANY WARRANTY. \nSubmit issues/comments/PR at'\
+                  ' http://gitlab.com/xgrg/nisnap.\n\n'\
+                  'Author: Greg Operto - BarcelonaBeta Brain Research Center'\
+                  ' (2020)'
+
     parser = argparse.ArgumentParser(description=desc,
-        formatter_class=RawTextHelpFormatter)
+                                     formatter_class=RawTextHelpFormatter)
     parser.add_argument('--bg', required=False, type=argparse.FileType('r'),
         help = 'background image on which segmentations will be plotted.')
     parser.add_argument('--axes', required=False, default='ACS',
@@ -39,7 +41,8 @@ def create_parser():
         default='SPM12_SEGMENT_T2T1_COREG2',
         help = '[XNAT mode] name of the resource to download')
     parser.add_argument('--cache', required=False, action='store_true',
-        default=False, help='[XNAT mode] skip downloads (e.g. if running for a second time')
+        help='[XNAT mode] skip downloads (e.g. if running for a second time',
+        default=False)
 
     parser.add_argument('--disable_warnings', required=False, action='store_true',
         default=False)
@@ -68,11 +71,12 @@ def __check_axes__(axes):
         is_correct = False
 
     msg = 'axes should be a single character or an Iterable with the'\
-        ' following: %s'%', '.join(ax_names)
+        ' following: %s' % ', '.join(ax_names)
     if not is_correct:
-        log.warning('Axes: %s (%s)'%(axes, type(axes)))
+        log.warning('Axes: %s (%s)' % (axes, type(axes)))
         raise ValueError(msg)
     return tuple(curated_axes)
+
 
 def check_logic(args):
     '''Some arguments/options are not compatible, or required jointly. This
@@ -136,17 +140,19 @@ def run(args):
     axes = tuple([e for e in args.axes])
     if args.config:
         from .. import xnat
-        xnat.plot_segment(args.config.name, args.experiment, savefig=args.output,
-            resource_name=args.resource, axes=axes, raw=not args.nobg,
-            opacity=args.opacity, animated=args.output.endswith('.gif'),
-            cache=args.cache, contours=args.contours, samebox=args.samebox)
+        xnat.plot_segment(args.config.name, args.experiment,
+                          savefig=args.output, resource_name=args.resource, 
+                          axes=axes, raw=not args.nobg, opacity=args.opacity,
+                          animated=args.output.endswith('.gif'),
+                          cache=args.cache, contours=args.contours,
+                          samebox=args.samebox)
     else:
         from .. import snap
 
         fp = args.files[0].name if len(args.files) == 1 \
             else [e.name for e in args.files]
 
-        snap.plot_segment(fp, axes=axes,
-            bg=args.bg.name, opacity=args.opacity, contours=args.contours,
-            animated=args.output.endswith('.gif'), savefig=args.output,
-            samebox=args.samebox)
+        snap.plot_segment(fp, axes=axes, bg=args.bg.name, opacity=args.opacity,
+                          contours=args.contours,
+                          animated=args.output.endswith('.gif'), 
+                          savefig=args.output, samebox=args.samebox)

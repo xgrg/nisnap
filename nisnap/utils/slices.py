@@ -1,23 +1,26 @@
 from collections.abc import Iterable
 import numpy as np
 
+
 def _chunks_(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
+
 def __get_lambdas__(data):
-    if len(data.shape) == 4: # RGB mode (4D volume)
-        lambdas = {'x': lambda x: data[:,:,x,:],
-                   'y': lambda x: data[:,x,:,:],
-                   'z': lambda x: data[x,:,:,:]}
-    else: # standard 3D label volume
-        lambdas = {'x': lambda x: data[:,:,x],
-                   'y': lambda x: data[:,x,:],
-                   'z': lambda x: data[x,:,:]}
+    if len(data.shape) == 4:  # RGB mode (4D volume)
+        lambdas = {'x': lambda x: data[:, :, x, :],
+                   'y': lambda x: data[:, x, :, :],
+                   'z': lambda x: data[x, :, :, :]}
+    else:  # standard 3D label volume
+        lambdas = {'x': lambda x: data[:, :, x],
+                   'y': lambda x: data[:, x, :],
+                   'z': lambda x: data[x, :, :]}
     return lambdas
 
-def __get_abs_minmax(data, axis, slices, margin = 5):
+
+def __get_abs_minmax(data, axis, slices, margin=5):
     bb = {}
     lambdas = __get_lambdas__(data)
 
@@ -25,8 +28,9 @@ def __get_abs_minmax(data, axis, slices, margin = 5):
 
         bb[a] = []
         for i, slice_index in enumerate(chunk):
-            test = np.flip(np.swapaxes(np.abs(lambdas[axis](int(slice_index))), 0, 1), 0)
-            xs, ys = np.where(test!=0)
+            test = np.flip(np.swapaxes(np.abs(lambdas[axis](int(slice_index))),
+                                       0, 1), 0)
+            xs, ys = np.where(test != 0)
             bb[a].append((xs, ys))
 
     min_xs, max_xs = 9999, 0
@@ -49,6 +53,7 @@ def __get_abs_minmax(data, axis, slices, margin = 5):
             res[a].append(i)
     return res
 
+
 def __maxsize__(data):
     d = []
     lambdas = __get_lambdas__(data)
@@ -56,10 +61,11 @@ def __maxsize__(data):
     maxsize = 0
     slice_index = 0
     for slice_index in range(0, data.shape[2]):
-        test = np.flip(np.swapaxes(np.abs(lambdas['x'](int(slice_index))), 0, 1), 0)
+        test = np.flip(np.swapaxes(np.abs(lambdas['x'](int(slice_index))),
+                                   0, 1), 0)
         black_pixels_mask = np.all(test == 0, axis=-1)
 
-        size = len(test) - len(black_pixels_mask[black_pixels_mask==True])
+        size = len(test) - len(black_pixels_mask[black_pixels_mask])
         maxsize = max(size, maxsize)
         d.append((slice_index, size))
     return maxsize
@@ -77,26 +83,26 @@ def remove_empty_slices(data, slices, threshold=0):
                 black_pixels_mask = np.all(test == [0, 0, 0], axis=-1)
             else:
                 black_pixels_mask = np.all(test == 0, axis=-1)
-            size = len(test) - len(black_pixels_mask[black_pixels_mask==True])
+            size = len(test) - len(black_pixels_mask[black_pixels_mask])
             if size > threshold:
                 new_slices[axis].append(slice_index)
             else:
                 import logging as log
-                log.info('Removing empty slice %s-%s'%(axis, slice_index))
+                log.info('Removing empty slice %s-%s' % (axis, slice_index))
     return new_slices
 
 
 def _fix_rowsize_(axes, rowsize=None):
 
-    default_rowsize = {'x': 9, 'y': 9, 'z':6}
+    default_rowsize = {'x': 9, 'y': 9, 'z': 6}
 
     if rowsize is None:
-        rs = {e :default_rowsize[e] for e in axes}
+        rs = {e: default_rowsize[e] for e in axes}
     elif isinstance(rowsize, int):
-        rs = {e :{'x': rowsize, 'y': rowsize, 'z':rowsize}[e] for e in axes}
+        rs = {e: {'x': rowsize, 'y': rowsize, 'z': rowsize}[e] for e in axes}
     elif isinstance(rowsize, dict):
         from nisnap.utils.parse import __check_axes__
-        rs = {__check_axes__(e)[0]:rowsize[e] for e in axes}
+        rs = {__check_axes__(e)[0]: rowsize[e] for e in axes}
     else:
         raise TypeError('rowsize should be an int or a dict')
     return rs
@@ -107,12 +113,12 @@ def _fix_figsize_(axes, figsize=None):
     default_figsize = {'x': (10, 5), 'y': (10, 5), 'z': (10, 5)}
 
     if figsize is None:
-        fs = {e :default_figsize[e] for e in axes}
+        fs = {e: default_figsize[e] for e in axes}
     elif isinstance(figsize, (list, tuple)) and len(figsize) == 2:
         fs = {each: figsize for each in axes}
     elif isinstance(figsize, dict):
         from nisnap.utils.parse import __check_axes__
-        fs = {__check_axes__(e)[0]:figsize[e] for e in axes}
+        fs = {__check_axes__(e)[0]: figsize[e] for e in axes}
     else:
         raise TypeError('figsize should be a tuple/list of size 2 or a dict')
 
@@ -122,10 +128,10 @@ def _fix_figsize_(axes, figsize=None):
 def cut_slices(data, axes, rowsize, slices=None, step=3, threshold=75):
 
     default_slices = {'x': list(range(0, data.shape[2], step)),
-        'y': list(range(0, data.shape[1], step)),
-        'z': list(range(0, data.shape[0], step))}
+                      'y': list(range(0, data.shape[1], step)),
+                      'z': list(range(0, data.shape[0], step))}
 
-    if not slices is None:
+    if slices is not None:
         if isinstance(slices, dict):
             sl = {e: list(slices[e]) for e in axes}
         elif isinstance(slices, Iterable):
