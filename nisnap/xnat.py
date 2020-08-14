@@ -64,8 +64,8 @@ def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
 
 
 def __download_freesurfer6__(x, experiment_id, destination,
-                                resource_name='FREESURFER6',
-                                raw=True, cache=False): #, labels=None):
+                             resource_name='FREESURFER6',
+                             raw=True, cache=False):
     import os.path as op
     filepaths = []
     e = x.select.experiment(experiment_id)
@@ -116,8 +116,7 @@ def __download_freesurfer6__(x, experiment_id, destination,
 
     print(bg, aseg_fp)
     filepaths = [bg]
-    # if labels is not None:
-    #     aseg_fp = aseg.__picklabel_fs__(aseg_fp, labels=labels)
+
     filepaths.append(aseg_fp)
     print(filepaths)
     return filepaths
@@ -212,7 +211,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
 
     elif 'FREESURFER6' in resource_name:
         filepaths = __download_freesurfer6__(x, experiment_id, destination,
-                                                resource_name, raw, cache)
+                                             resource_name, raw, cache)
 
     elif 'CAT12' in resource_name:
         if raw:
@@ -346,8 +345,8 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     dest = tempfile.gettempdir()
     # Downloading resources
     try:
-        filepaths = download_resources(config, experiment_id, resource_name, dest,
-                                       raw=raw, cache=cache)
+        filepaths = download_resources(config, experiment_id, resource_name,
+                                       dest, raw=raw, cache=cache)
     except FileNotFoundError as exc:
         msg = '{0}. Retry with cache set to False.'.format(exc)
         raise FileNotFoundError(msg)
