@@ -114,12 +114,7 @@ def __download_freesurfer6__(x, experiment_id, destination,
         aseg_fp = aseg.__swap_fs__(aseg_fp, cache=True)
         bg = aseg.__swap_fs__(filepaths[1], cache=True)
 
-    print(bg, aseg_fp)
-    filepaths = [bg]
-
-    filepaths.append(aseg_fp)
-    print(filepaths)
-    return filepaths
+    return [bg, aseg_fp]
 
 
 def __download_spm12__(x, experiment_id, destination,
