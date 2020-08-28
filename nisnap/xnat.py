@@ -100,6 +100,7 @@ def __download_freesurfer6__(x, experiment_id, destination,
     aseg.__swap_fs__(bg, cache=cache)
 
     import logging as log
+    log.basicConfig(level=log.INFO)
     log.info('freesurfer_reg_to_native: %s' % freesurfer_reg_to_native)
 
     bg = filepaths[0]
