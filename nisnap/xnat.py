@@ -6,7 +6,7 @@ freesurfer_reg_to_native = os.environ.get('FREESURFER_REG_TO_NATIVE', 0) == str(
 
 
 def __is_valid_scan__(xnat_instance, scan):
-    ''' Checks if a scan is valid according to a set of rules '''
+    """ Checks if a scan is valid according to a set of rules """
     valid = False
     import fnmatch
     prefix = [i.split('/')[0] for i in scan.keys()
@@ -25,21 +25,20 @@ def __is_valid_scan__(xnat_instance, scan):
 
 
 def __get_T1__(x, experiment_id, sequence='T1_ALFA1'):
-    t2_lut_names = [sequence]
-    t2_scans = []
+    t1_lut_names = [sequence]
+    t1_scans = []
     scans = x.array.mrscans(experiment_id=experiment_id,
                             columns=['xnat:mrScanData/quality',
                                      'xnat:mrScanData/type',
                                      'xsiType']).data
+    e = x.select.experiment(experiment_id)
     for s in scans:
-        e = x.select.experiment(experiment_id)
-
         scan = e.scan(s['xnat:mrscandata/id'])
-        if scan.attrs.get('type').rstrip(' ') in t2_lut_names and\
-           __is_valid_scan__(x, s):
-            t2_scans.append(scan.id())
-    assert(len(t2_scans) == 1)
-    files = list(e.scan(t2_scans[0]).resource('NIFTI').files('*.nii.gz'))
+        if scan.attrs.get('type').rstrip(' ') in t1_lut_names and\
+                __is_valid_scan__(x, s):
+            t1_scans.append(scan.id())
+    assert(len(t1_scans) == 1)
+    files = list(e.scan(t1_scans[0]).resource('NIFTI').files('*.nii.gz'))
     return files[0]
 
 
@@ -50,8 +49,8 @@ def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
                             columns=['xnat:mrScanData/quality',
                                      'xnat:mrScanData/type',
                                      'xsiType']).data
+    e = x.select.experiment(experiment_id)
     for s in scans:
-        e = x.select.experiment(experiment_id)
         scan = e.scan(s['xnat:mrscandata/id'])
 
         if scan.attrs.get('type').rstrip(' ') in t2_lut_names and\
@@ -152,8 +151,8 @@ def __download_spm12__(x, experiment_id, destination,
     return filepaths
 
 
-def download_resources(config, experiment_id, resource_name,  destination,
-                       raw=True, cache=False):
+def download_resources(config, experiment_id, resource_name,
+                       destination, raw=True, cache=False):
     """Download a given experiment/resource from an XNAT instance in a local
     destination folder.
 
@@ -206,7 +205,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
 
     if 'SPM12' in resource_name:
         filepaths = __download_spm12__(x, experiment_id, destination,
-                           resource_name, raw, cache)
+                                       resource_name, raw, cache)
 
     elif resource_name == 'ASHS':
         r = e.resource(resource_name)
@@ -247,8 +246,7 @@ def download_resources(config, experiment_id, resource_name,  destination,
             if f is None and not raw:
                 continue
             if not op.isfile(f):
-                msg = 'No such file: \'%s\'. Retry with cache set to False.'\
-                        % f
+                msg = 'No such file: \'%s\'. Retry with cache set to False.' % f
                 raise FileNotFoundError(msg)
 
     return filepaths
@@ -336,8 +334,8 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
 
     """
     if animated and not raw:
-        msg = 'animated cannot be True with raw set to False. Switching raw'\
-                ' to True.'
+        msg = 'animated cannot be True with raw set to False. ' \
+              'Switching raw to True.'
         import logging as log
         log.warning(msg)
         raw = True
