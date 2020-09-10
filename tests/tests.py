@@ -17,8 +17,8 @@ class RunThemAll(unittest.TestCase):
         parse.check_logic(args)
 
         try:
-            args = '/tmp/.xnat.cfg /tmp/.xnat.cfg /tmp/.xnat.cfg '\
-                '/tmp/.xnat.cfg -o /tmp/toto.jpg'
+            args = '/tmp/.xnat.cfg /tmp/.xnat.cfg /tmp/.xnat.cfg ' \
+                   '/tmp/.xnat.cfg -o /tmp/toto.jpg'
             args = parser.parse_args(args.split(' '))
             parse.check_logic(args)
         except Exception as e:
@@ -26,8 +26,8 @@ class RunThemAll(unittest.TestCase):
             pass
 
         try:
-            args = '/tmp/.xnat.cfg /tmp/.xnat.cfg /tmp/.xnat.cfg '\
-                '/tmp/.xnat.cfg /tmp/.xnat.cfg -o /tmp/toto.jpg'
+            args = '/tmp/.xnat.cfg /tmp/.xnat.cfg /tmp/.xnat.cfg ' \
+                   '/tmp/.xnat.cfg /tmp/.xnat.cfg -o /tmp/toto.jpg'
             args = parser.parse_args(args.split(' '))
             parse.check_logic(args)
         except Exception as e:
@@ -52,8 +52,8 @@ class RunThemAll(unittest.TestCase):
             pass
 
         try:
-            args = '/tmp/.xnat.cfg /tmp/.xnat.cfg /tmp/.xnat.cfg '\
-                '--opacity 10 -o /tmp/toto.jpg'
+            args = '/tmp/.xnat.cfg /tmp/.xnat.cfg /tmp/.xnat.cfg ' \
+                   '--opacity 10 -o /tmp/toto.jpg'
             args = parser.parse_args(args.split(' '))
             parse.check_logic(args)
         except Exception as e:
@@ -87,17 +87,18 @@ class RunThemAll(unittest.TestCase):
                                 resource_name='SPM12_SEGMENT_T2T1_COREG3',
                                 destination='/tmp', raw=True)
         parser = parse.create_parser()
-        args = '--bg /tmp/BBRCDEV_E02859_T2_T1space.nii.gz '\
-           '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c1.nii.gz'\
-           ' /tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_filled_c2.nii.gz '\
-           '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c3.nii.gz -o /tmp/test.png --axes x --opacity 30'
+        args = '--bg /tmp/BBRCDEV_E02859_T1.nii.gz ' \
+               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c1.nii.gz ' \
+               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_filled_c2.nii.gz '\
+               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c3.nii.gz ' \
+               '-o /tmp/test.png --axes x --opacity 30'
         args = parser.parse_args(args.split(' '))
         parse.run(args)
 
     def test_003_snap_xnat(self):
         parser = parse.create_parser()
-        args = '--config .xnat.cfg '\
-           '-e BBRCDEV_E02859 -o /tmp/test.png --axes x --opacity 30'
+        args = '--config .xnat.cfg -e BBRCDEV_E02859 ' \
+               '-o /tmp/test.png --axes x --opacity 30'
         args = parser.parse_args(args.split(' '))
         parse.run(args)
 
