@@ -74,8 +74,8 @@ def __download_freesurfer6__(x, experiment_id, destination,
         fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
         filepaths.append(fp1)
         if not cache:
-            t2_t1space = __get_T1__(x, experiment_id)
-            t2_t1space.get(fp1)
+            t1_file = __get_T1__(x, experiment_id)
+            t1_file.get(fp1)
     else:
         filepaths.append(None)
 
@@ -126,12 +126,11 @@ def __download_spm12__(x, experiment_id, destination,
     r = e.resource(resource_name)
 
     if raw:
-        fp1 = op.join(destination, '%s_T2_T1space.nii.gz' % experiment_id)
-        # fp1 = op.join(destination, '%s_T1.nii.gz'%experiment_id)
+        fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
         filepaths.append(fp1)
         if not cache:
-            t2_t1space = __get_T2__(x, experiment_id)
-            t2_t1space.get(fp1)
+            t1_file = __get_T1__(x, experiment_id)
+            t1_file.get(fp1)
 
     else:
         filepaths.append(None)
