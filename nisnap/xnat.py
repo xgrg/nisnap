@@ -2,7 +2,7 @@ import tempfile
 import os
 
 
-freesurfer_reg_to_native = os.environ.get('FREESURFER_REG_TO_NATIVE', 0) == str(1)
+freesurfer_reg_to_native = os.environ.get('FREESURFER_REG_TO_NATIVE', 0) == '1'
 
 
 def __is_valid_scan__(xnat_instance, scan):
