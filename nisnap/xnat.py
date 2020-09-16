@@ -1,5 +1,6 @@
 import tempfile
 import os
+import os.path as op
 
 
 freesurfer_reg_to_native = os.environ.get('FREESURFER_REG_TO_NATIVE', 0) == '1'
@@ -65,7 +66,6 @@ def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
 def __download_freesurfer6__(x, experiment_id, destination,
                              resource_name='FREESURFER6',
                              raw=True, cache=False):
-    import os.path as op
     filepaths = []
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
@@ -120,7 +120,6 @@ def __download_freesurfer6__(x, experiment_id, destination,
 def __download_spm12__(x, experiment_id, destination,
                        resource_name='SPM12_SEGMENT',
                        raw=True, cache=False):
-    import os.path as op
     filepaths = []
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
@@ -147,6 +146,23 @@ def __download_spm12__(x, experiment_id, destination,
             c.get(fp)
         filepaths.append(fp)
 
+    return filepaths
+
+
+def __download_ashs__(x, experiment_id, destination, resource_name='ASHS',
+                      raw=True, cache=False):
+    filepaths = []
+    e = x.select.experiment(experiment_id)
+    r = e.resource(resource_name)
+
+    r = e.resource(resource_name)
+    for each in ['tse.nii.gz', 'left_lfseg_corr_nogray.nii.gz']:
+        c = list(r.files('*%s' % each))[0]
+        fp = op.join(destination, '%s_%s_%s' % (experiment_id,
+                                                resource_name, each))
+        if not cache:
+            c.get(fp)
+        filepaths.append(fp)
     return filepaths
 
 
@@ -196,7 +212,6 @@ def download_resources(config, experiment_id, resource_name,
         filepaths
 
     """
-    import os.path as op
     import pyxnat
     x = pyxnat.Interface(config=config)
     filepaths = []
@@ -207,14 +222,8 @@ def download_resources(config, experiment_id, resource_name,
                                        resource_name, raw, cache)
 
     elif resource_name == 'ASHS':
-        r = e.resource(resource_name)
-        for each in ['tse.nii.gz', 'left_lfseg_corr_nogray.nii.gz']:
-            c = list(r.files('*%s' % each))[0]
-            fp = op.join(destination, '%s_%s_%s' % (experiment_id,
-                                                    resource_name, each))
-            if not cache:
-                c.get(fp)
-            filepaths.append(fp)
+        filepaths = __download_ashs__(x, experiment_id, destination,
+                                      resource_name, raw, cache)
 
     elif 'FREESURFER6' in resource_name:
         filepaths = __download_freesurfer6__(x, experiment_id, destination,
