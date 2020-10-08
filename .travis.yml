@@ -1,0 +1,16 @@
+dist: bionic
+
+before_install:
+  - sudo apt-get update
+
+language: python
+python:
+    - "3.8"
+install:
+    - "pip install -r requirements.txt"
+script:
+    - "python tests/fetch_config.py https://devxnat.barcelonabeta.org --xnat_user $XNAT_USER --xnat_password $XNAT_PASSWORD"
+    - "nosetests tests --with-coverage --cover-inclusive --cover-erase --cover-package nisnap"
+    - "coverage report -m"
+after_success:
+    - coveralls

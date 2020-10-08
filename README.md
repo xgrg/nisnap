@@ -11,11 +11,9 @@ Create snapshots of segmentation maps produced by neuroimaging software.
 Inspired by tools like [nilearn](https://nilearn.github.io/),
 [visualqc](https://github.com/raamana/visualqc), [fmriprep](https://fmriprep.readthedocs.io/en/stable/) and others.
 
-![example](https://gitlab.com/xgrg/nisnap/raw/master/doc/nisnap.gif)
+<img src="https://github.com/xgrg/nisnap/raw/master/doc/nisnap.gif" width="1000px">
 
-![example](https://gitlab.com/xgrg/nisnap/raw/master/doc/nisnap2.gif)
-
-
+<img src="https://github.com/xgrg/nisnap/raw/master/doc/nisnap2.gif" width="1000px">
 
 
 ## Usage
