@@ -38,7 +38,7 @@ def create_parser():
     parser.add_argument('-e', '--experiment', required=False, type=str,
         help = '[XNAT mode] ID of the experiment to create snapshots from.')
     parser.add_argument('--resource', required=False, type=str,
-        default='SPM12_SEGMENT_T2T1_COREG2',
+        default='SPM12_SEGMENT',
         help = '[XNAT mode] name of the resource to download')
     parser.add_argument('--cache', required=False, action='store_true',
         help='[XNAT mode] skip downloads (e.g. if running for a second time',
@@ -141,7 +141,7 @@ def run(args):
     if args.config:
         from .. import xnat
         xnat.plot_segment(args.config.name, args.experiment,
-                          savefig=args.output, resource_name=args.resource, 
+                          savefig=args.output, resource_name=args.resource,
                           axes=axes, raw=not args.nobg, opacity=args.opacity,
                           animated=args.output.endswith('.gif'),
                           cache=args.cache, contours=args.contours,
@@ -154,5 +154,5 @@ def run(args):
 
         snap.plot_segment(fp, axes=axes, bg=args.bg.name, opacity=args.opacity,
                           contours=args.contours,
-                          animated=args.output.endswith('.gif'), 
+                          animated=args.output.endswith('.gif'),
                           savefig=args.output, samebox=args.samebox)

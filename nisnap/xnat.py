@@ -137,7 +137,7 @@ def __download_spm12__(x, experiment_id, destination,
 
     r = e.resource(resource_name)
     files = ['c1', 'c2', 'c3']
-    if resource_name == 'SPM12_SEGMENT_T2T1_COREG3':
+    if resource_name == 'SPM12_SEGMENT_T2T1':
         files = ['c1', 'filled_c2', 'c3']
     for each in files:
         c = list(r.files('%s*.nii.gz' % each))[0]
@@ -262,7 +262,7 @@ def download_resources(config, experiment_id, resource_name,
 
 
 def plot_segment(config, experiment_id, savefig=None, slices=None,
-                 resource_name='SPM12_SEGMENT_T2T1_COREG',
+                 resource_name='SPM12_SEGMENT',
                  axes='xyz', raw=True, opacity=10, animated=False,
                  rowsize=None, figsize=None, contours=False, cache=False,
                  samebox=False):
@@ -289,7 +289,7 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
 
     resource_name: string, optional
         Name of the resource where the segmentation maps are stored in the XNAT
-        instance. Default: SPM12_SEGMENT_T2T1_COREG
+        instance. Default: SPM12_SEGMENT
 
     axes: string, or a tuple of strings
         Choose the direction of the cuts (among 'x', 'y', or 'z')

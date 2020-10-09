@@ -84,13 +84,13 @@ class RunThemAll(unittest.TestCase):
     def test_002_snap_files(self):
         xnat.download_resources(config='.xnat.cfg',
                                 experiment_id='BBRCDEV_E02859',
-                                resource_name='SPM12_SEGMENT_T2T1_COREG3',
+                                resource_name='SPM12_SEGMENT',
                                 destination='/tmp', raw=True)
         parser = parse.create_parser()
         args = '--bg /tmp/BBRCDEV_E02859_T1.nii.gz ' \
-               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c1.nii.gz ' \
-               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_filled_c2.nii.gz '\
-               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_T2T1_COREG3_c3.nii.gz ' \
+               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_c1.nii.gz ' \
+               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_c2.nii.gz '\
+               '/tmp/BBRCDEV_E02859_SPM12_SEGMENT_c3.nii.gz ' \
                '-o /tmp/test.png --axes x --opacity 30'
         args = parser.parse_args(args.split(' '))
         parse.run(args)
@@ -110,7 +110,7 @@ class RunThemAll(unittest.TestCase):
     def test_005(self):
         filepaths = xnat.download_resources(config='.xnat.cfg',
                                             experiment_id='BBRCDEV_E02859',
-            resource_name='SPM12_SEGMENT_T2T1_COREG3', destination='/tmp',
+            resource_name='SPM12_SEGMENT', destination='/tmp',
             raw=True)
         nisnap.plot_segment(filepaths[1:], bg=None, axes='x',
                             slices=range(100, 110, 2),
@@ -131,7 +131,7 @@ class RunThemAll(unittest.TestCase):
         from nisnap import xnat
         xnat.plot_segment(config='.xnat.cfg',
                           experiment_id='BBRCDEV_E02859',
-                          resource_name='SPM12_SEGMENT_T2T1_COREG3',
+                          resource_name='SPM12_SEGMENT',
                           axes='x', opacity=100, slices=range(160, 180, 3),
                           rowsize={'x': 9},
                           animated=False, contours=True, cache=True)
