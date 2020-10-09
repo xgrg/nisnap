@@ -48,8 +48,8 @@ def __get_abs_minmax(data, axis, slices, margin=5):
     for a, bba in bb.items():
         res[a] = []
         for each in bba:
-            i = [int(min_xs - margin), int(max_xs + margin)],\
-                [int(min_ys - margin), int(max_ys + margin)]
+            i = [max(int(min_xs - margin), 0) , int(max_xs + margin)],\
+                [max(int(min_ys - margin), 0), int(max_ys + margin)]
             res[a].append(i)
     return res
 
