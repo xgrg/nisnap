@@ -94,7 +94,8 @@ def __download_freesurfer6__(x, experiment_id, destination,
     bg = filepaths[1]
 
     # Note that the filepaths for these new steps are not stored/returned
-    aseg.__preproc_aseg__(aseg_fp, bg, cache=cache)
+    if freesurfer_reg_to_native:
+        aseg.__preproc_aseg__(aseg_fp, bg, cache=cache)
     aseg.__swap_fs__(aseg_fp, cache=cache)
     aseg.__swap_fs__(bg, cache=cache)
 
