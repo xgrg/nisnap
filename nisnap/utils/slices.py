@@ -63,9 +63,13 @@ def __maxsize__(data):
     for slice_index in range(0, data.shape[2]):
         test = np.flip(np.swapaxes(np.abs(lambdas['x'](int(slice_index))),
                                    0, 1), 0)
-        black_pixels_mask = np.all(test == 0, axis=-1)
-
+        if len(data.shape) == 4:
+            black_pixels_mask = np.all(test == [0, 0, 0], axis=-1)
+        else:
+            black_pixels_mask = np.all(test == 0, axis=-1)
+    
         size = len(test) - len(black_pixels_mask[black_pixels_mask])
+
         maxsize = max(size, maxsize)
         d.append((slice_index, size))
     return maxsize

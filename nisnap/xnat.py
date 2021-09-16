@@ -3,7 +3,8 @@ import os
 import os.path as op
 
 
-freesurfer_reg_to_native = os.environ.get('FREESURFER_REG_TO_NATIVE', 0) == '1'
+ev = 'FREESURFER_REG_TO_NATIVE'
+freesurfer_reg_to_native = os.environ.get(ev, None) is not None
 
 
 def __is_valid_scan__(xnat_instance, scan):
@@ -63,9 +64,9 @@ def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
     return t2_t1space
 
 
-def __download_freesurfer6__(x, experiment_id, destination,
-                             resource_name='FREESURFER6',
-                             raw=True, cache=False):
+def __download_freesurfer__(x, experiment_id, destination,
+                            resource_name='FREESURFER7',
+                            raw=True, cache=False):
     filepaths = []
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
@@ -82,7 +83,7 @@ def __download_freesurfer6__(x, experiment_id, destination,
     files = ['rawavg.mgz', 'aparc+aseg.mgz'] if freesurfer_reg_to_native\
         else ['nu.mgz', 'aparc+aseg.mgz']
 
-    for each in files:  # ['orig.mgz', 'aparc+aseg.mgz']:
+    for each in files:
         c = list(r.files('*%s' % each))[0]
         fp = op.join(destination, '%s_%s' % (experiment_id, each))
         if not cache:
@@ -137,7 +138,7 @@ def __download_spm12__(x, experiment_id, destination,
 
     r = e.resource(resource_name)
     files = ['c1', 'c2', 'c3']
-    if resource_name == 'SPM12_SEGMENT_T2T1':
+    if resource_name == 'SPM12_SEGMENT_T1T2':
         files = ['c1', 'filled_c2', 'c3']
     for each in files:
         c = list(r.files('%s*.nii.gz' % each))[0]
@@ -226,8 +227,8 @@ def download_resources(config, experiment_id, resource_name,
         filepaths = __download_ashs__(x, experiment_id, destination,
                                       resource_name, raw, cache)
 
-    elif 'FREESURFER6' in resource_name:
-        filepaths = __download_freesurfer6__(x, experiment_id, destination,
+    elif 'FREESURFER' in resource_name:
+        filepaths = __download_freesurfer__(x, experiment_id, destination,
                                              resource_name, raw, cache)
 
     elif 'CAT12' in resource_name:
@@ -263,7 +264,7 @@ def download_resources(config, experiment_id, resource_name,
 
 def plot_segment(config, experiment_id, savefig=None, slices=None,
                  resource_name='SPM12_SEGMENT',
-                 axes='xyz', raw=True, opacity=10, animated=False,
+                 axes='xyz', raw=True, opacity=70, animated=False,
                  rowsize=None, figsize=None, contours=False, cache=False,
                  samebox=False):
     """Download a given experiment/resource from an XNAT instance and create
@@ -370,7 +371,6 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     bg = filepaths[0]
 
     filepaths = filepaths[1] if len(filepaths) == 2 else filepaths[1:]
-
     from . import snap
     snap.plot_segment(filepaths, axes=axes, bg=bg, opacity=opacity,
                       animated=animated, savefig=fp, figsize=figsize,

@@ -147,7 +147,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
     labels = list(np.unique(data))
     has_bb = bb is not None
-    has_orig = len(labels) > 100  # not bb is None
+    has_orig = len(labels) > 150  # not bb is None
 
     paths = []
     if not has_bb:
@@ -175,7 +175,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
             test = np.flip(np.swapaxes(np.abs(lambdas[axis](int(slice_index))),
                                        0, 1), 0)
             if not has_bb:
-                xs, ys = np.where(test != 0)
+                xs, ys = list(np.where(test != 0))[:2]
                 bb[a].append((xs, ys))
             else:
                 xs, ys = bb[a][i]
