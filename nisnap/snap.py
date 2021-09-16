@@ -203,7 +203,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
             ax.axis('off')
             ax.text(0, 0, '%i' % slice_index,
-                    {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
+                 {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
 
             if pbar is not None:
                 pbar.update(1)
@@ -214,7 +214,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
 
 def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
-             contours=False, figsize=None, samebox=False):
+             contours=False, figsize=None, samebox=False, margin=5):
     from matplotlib import pyplot as plt
 
     plt.rcParams['figure.facecolor'] = 'black'
@@ -246,7 +246,7 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
     for axis in axes:
         if samebox:
             from nisnap.utils.slices import __get_abs_minmax
-            same_bb = __get_abs_minmax(data, axis, slices[axis], margin=5)
+            same_bb = __get_abs_minmax(data, axis, slices[axis], margin=margin)
             log.warning('Using bounding box: %s (axis %s)'
                         % (same_bb[0][0], axis))
 
@@ -295,7 +295,7 @@ def __stack_img__(filepaths):
 
 def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
                  animated=False, savefig=None, contours=False, rowsize=None,
-                 figsize=None, samebox=False, labels=None):
+                 figsize=None, samebox=False, labels=None, margin=5):
     """Plots a set of segmentation maps/masks.
 
     Parameters
@@ -386,7 +386,7 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
     paths, paths_orig = __snap__(data, axes=axes, bg=bg,
                                  slices=slices, contours=contours,
                                  rowsize=rowsize, figsize=figsize,
-                                 samebox=samebox)
+                                 samebox=samebox, margin=margin)
 
     from nisnap.utils.montage import __montage__
     has_orig = bg is not None
