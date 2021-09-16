@@ -15,7 +15,7 @@ amygdala_nuclei = [7001, 7002, 7003, 7004, 7005, 7006, 7007, 7008, 7009, 7010,
 hippocampal_subfields = [193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203,
                          204, 205, 206, 207, 208, 209, 210, 212, 213, 214, 215,
                          216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226]
-                         
+
 
 def __process_img__(ifp, ofp, func, **kwargs):
     import nibabel as nib
@@ -65,3 +65,48 @@ def __preproc_aseg__(aseg_fp, rawavg_fp, cache=False):
         return fp
 
     return fp
+
+
+def __make_legend__(aseg_fp):
+    import os.path as op
+    import pandas as pd
+    from matplotlib import pyplot as plt
+    from matplotlib.patches import Patch
+    import nibabel as nib
+    import numpy as np
+    import tempfile
+    import logging as log
+    from IPython.display import Image
+
+    fp = op.join(os.environ['FREESURFER_HOME'], 'FreesurferColorLUT.txt')
+    fp = '/usr/local/freesurfer/FreeSurferColorLUT.txt'
+
+    data = open(fp).read().split('\n')
+    lut = [[each for each in e.split(' ') if each != '']
+           for e in data if not e.startswith('#') and len(e) != 0]
+
+    columns = ['label', 'name', 'R', 'G', 'B', 'A']
+    lut = pd.DataFrame(lut, columns=columns).set_index('label')
+    data = open(fp).read().split('\n')
+
+    legend_elements = []
+    labels = list(np.unique(np.asarray(nib.load(aseg_fp).dataobj)))
+    labels.remove(0)
+    for i in labels:
+        color = [int(lut[e][str(int(i))])/255.0 for e in 'RGB']
+        name = lut['name'][str(int(i))]
+        elt = Patch(facecolor=color, edgecolor=color, label=name)
+        legend_elements.append(elt)
+
+    # Create the figure
+    fig, ax = plt.subplots()
+    ax.legend(handles=legend_elements, loc='center')
+    ax.axis('off')
+
+    plt.show()
+    f, fp = tempfile.mkstemp(suffix='.jpg')
+    log.info('Saving %s' % fp)
+    os.close(f)
+    fig.savefig(fp, facecolor=fig.get_facecolor(),
+                bbox_inches='tight', transparent=True, pad_inches=0)
+    return Image(filename=fp)
