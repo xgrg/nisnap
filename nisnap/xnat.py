@@ -1,10 +1,8 @@
-import tempfile
-import os
-import os.path as op
+import os as __os__
 
-
-ev = 'FREESURFER_REG_TO_NATIVE'
-freesurfer_reg_to_native = os.environ.get(ev, None) is not None
+__ev__ = 'FREESURFER_REG_TO_NATIVE'
+__freesurfer_reg_to_native__ = __os__.environ.get(__ev__, None) is not None
+__all__ = []
 
 
 def __is_valid_scan__(xnat_instance, scan):
@@ -67,6 +65,7 @@ def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
 def __download_freesurfer__(x, experiment_id, destination,
                             resource_name='FREESURFER7',
                             raw=True, cache=False):
+    import os.path as op
     filepaths = []
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
@@ -80,7 +79,7 @@ def __download_freesurfer__(x, experiment_id, destination,
     else:
         filepaths.append(None)
 
-    files = ['rawavg.mgz', 'aparc+aseg.mgz'] if freesurfer_reg_to_native\
+    files = ['rawavg.mgz', 'aparc+aseg.mgz'] if __freesurfer_reg_to_native__\
         else ['nu.mgz', 'aparc+aseg.mgz']
 
     for each in files:
@@ -95,14 +94,14 @@ def __download_freesurfer__(x, experiment_id, destination,
     bg = filepaths[1]
 
     # Note that the filepaths for these new steps are not stored/returned
-    if freesurfer_reg_to_native:
+    if __freesurfer_reg_to_native__:
         aseg.__preproc_aseg__(aseg_fp, bg, cache=cache)
     aseg.__swap_fs__(aseg_fp, cache=cache)
     aseg.__swap_fs__(bg, cache=cache)
 
     import logging as log
     log.basicConfig(level=log.INFO)
-    log.info('freesurfer_reg_to_native: %s' % freesurfer_reg_to_native)
+    log.info('__freesurfer_reg_to_native__: %s' % __freesurfer_reg_to_native__)
 
     bg = filepaths[0]
 
@@ -110,7 +109,7 @@ def __download_freesurfer__(x, experiment_id, destination,
 
     # Files were created just before
     # So we only need to fetch their names (with cache=True)
-    if freesurfer_reg_to_native:
+    if __freesurfer_reg_to_native__:
         aseg_fp = aseg.__preproc_aseg__(aseg_fp, bg, cache=True)
     else:
         aseg_fp = aseg.__swap_fs__(aseg_fp, cache=True)
@@ -122,6 +121,8 @@ def __download_freesurfer__(x, experiment_id, destination,
 def __download_spm12__(x, experiment_id, destination,
                        resource_name='SPM12_SEGMENT',
                        raw=True, cache=False):
+    import os.path as op
+
     filepaths = []
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
@@ -153,6 +154,8 @@ def __download_spm12__(x, experiment_id, destination,
 
 def __download_ashs__(x, experiment_id, destination, resource_name='ASHS',
                       raw=True, cache=False):
+    import os.path as op
+
     filepaths = []
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
@@ -215,6 +218,8 @@ def download_resources(config, experiment_id, resource_name,
 
     """
     import pyxnat
+    import os.path as op
+
     x = pyxnat.Interface(config=config)
     filepaths = []
     e = x.select.experiment(experiment_id)
@@ -229,7 +234,7 @@ def download_resources(config, experiment_id, resource_name,
 
     elif 'FREESURFER' in resource_name:
         filepaths = __download_freesurfer__(x, experiment_id, destination,
-                                             resource_name, raw, cache)
+                                            resource_name, raw, cache)
 
     elif 'CAT12' in resource_name:
         if raw:
@@ -343,6 +348,8 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         filepaths
 
     """
+    import tempfile
+
     if animated and not raw:
         msg = 'animated cannot be True with raw set to False. ' \
               'Switching raw to True.'
@@ -355,9 +362,9 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         if animated:
             f, fp = tempfile.mkstemp(suffix='.gif')
         else:
-            from nisnap.snap import format
-            f, fp = tempfile.mkstemp(suffix=format)
-        os.close(f)
+            from nisnap.snap import __format__
+            f, fp = tempfile.mkstemp(suffix=__format__)
+        __os__.close(f)
 
     dest = tempfile.gettempdir()
     # Downloading resources

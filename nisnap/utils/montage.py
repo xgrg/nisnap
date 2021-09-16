@@ -26,8 +26,8 @@ def __vertical__(filepaths, fp):
 
 def __montage__(paths, paths_orig, axes, opacity, has_orig, animated,
                 savefig=None):
-    from nisnap.snap import format
-    f, fp = tempfile.mkstemp(suffix=format)
+    from nisnap.snap import __format__
+    f, fp = tempfile.mkstemp(suffix=__format__)
     os.close(f)
     __vertical__([paths[each][0] for each in axes], fp)
 
@@ -37,7 +37,7 @@ def __montage__(paths, paths_orig, axes, opacity, has_orig, animated,
     if has_orig:
         # Create one image with the selected axes
         __vertical__([paths_orig[each][0] for each in axes],
-                     fp[:-4] + '_orig%s' % format)
+                     fp[:-4] + '_orig%s' % __format__)
 
         for each in axes:
             os.unlink(paths_orig[each][0])
@@ -53,18 +53,18 @@ def __montage__(paths, paths_orig, axes, opacity, has_orig, animated,
             for i, opac in enumerate(line):
 
                 dissolve(fp,
-                         fp[:-4] + '_orig%s' % format,
+                         fp[:-4] + '_orig%s' % __format__,
                          opac,
-                         fp[:-4] + '_fusion_%03d%s' % (i, format))
+                         fp[:-4] + '_fusion_%03d%s' % (i, __format__))
                 pbar.update(1)
 
             # From segmentation to raw data
             for i, opac in enumerate(line):
 
                 dissolve(fp,
-                         fp[:-4] + '_orig%s' % format,
+                         fp[:-4] + '_orig%s' % __format__,
                          opacity - opac,
-                         fp[:-4] + '_fusion_%03d%s' % ((len(line)+i), format))
+                         fp[:-4] + '_fusion_%03d%s' % ((len(line)+i), __format__))
                 pbar.update(1)
 
             pbar.update(2*len(line))
@@ -73,29 +73,29 @@ def __montage__(paths, paths_orig, axes, opacity, has_orig, animated,
             # Collect frames and create gif
             filepaths = []
             for i, opac in enumerate(range(0, 2 * opacity, int(opacity/10.0))):
-                filepaths.append(fp[:-4] + '_fusion_%03d%s' % (i, format))
+                filepaths.append(fp[:-4] + '_fusion_%03d%s' % (i, __format__))
 
             create_gif(filepaths, fp[:-4] + '.gif')
 
-            # log.info('Saved in %s'%fp.replace(format, '.gif'))
+            # log.info('Saved in %s'%fp.replace(__format__, '.gif'))
 
             # Removing fusions (jpeg files)
             for each in filepaths:
                 os.unlink(each)
             os.unlink(fp)
-            os.unlink(fp[:-4] + '_orig%s' % format)
+            os.unlink(fp[:-4] + '_orig%s' % __format__)
 
         else:
             # Blends the two images (segmentation and original) into a
             # composite one
 
             dissolve(fp,
-                     fp[:-4] + '_orig%s' % format,
+                     fp[:-4] + '_orig%s' % __format__,
                      opacity,
-                     fp[:-4] + '_fusion%s' % format)
+                     fp[:-4] + '_fusion%s' % __format__)
 
             os.unlink(fp)
-            os.unlink(fp[:-4] + '_orig%s' % format)
+            os.unlink(fp[:-4] + '_orig%s' % __format__)
 
     # Cleaning and saving files in right location
 
@@ -107,10 +107,10 @@ def __montage__(paths, paths_orig, axes, opacity, has_orig, animated,
 
         else:
             if savefig is not None:
-                shutil.move(fp[:-4] + '_fusion%s' % format, savefig)
+                shutil.move(fp[:-4] + '_fusion%s' % __format__, savefig)
                 log.info('Saved in %s' % savefig)
             else:
-                shutil.move(fp[:-4] + '_fusion%s' % format, fp)
+                shutil.move(fp[:-4] + '_fusion%s' % __format__, fp)
                 log.info('Saved in %s' % fp)
 
     else:

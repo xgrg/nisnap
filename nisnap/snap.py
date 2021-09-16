@@ -1,18 +1,20 @@
+from nisnap.utils.aseg import basal_ganglia_labels, cortical_labels
+from nisnap.utils.aseg import amygdala_nuclei, hippocampal_subfields
 
-import logging as log
-import tempfile
-import os
-
-format = '.png'
+__format__ = '.png'
 
 
 def pick_labels(data, labels):
+    """Replaces all values by zero in a Numpy array (`data`) except values
+    passed in `labels`. Used to select some specific labels in a given
+    segmentation."""
+
     import numpy as np
     data2 = np.where(np.isin(data, labels), data, 0)
     return data2
 
 
-def aget_cmap(labels=[]):
+def _aget_cmap_(labels=[]):
     import json
     import numpy as np
     import nisnap
@@ -31,7 +33,7 @@ def aget_cmap(labels=[]):
     return LUT
 
 
-def plot_contours_in_slice(slice_seg, target_axis, labels=None):
+def _plot_contours_in_slice_(slice_seg, target_axis, labels=None):
     """Plots contour around the data in slice (after binarization)"""
     import numpy as np
 
@@ -39,7 +41,7 @@ def plot_contours_in_slice(slice_seg, target_axis, labels=None):
         labels = list(np.unique(slice_seg))
 
     from matplotlib.colors import ListedColormap
-    cmap = ListedColormap(aget_cmap(labels))
+    cmap = ListedColormap(_aget_cmap_(labels))
 
     num_labels = len(cmap.colors)
     unique_labels = np.arange(num_labels, dtype='int16')
@@ -71,11 +73,12 @@ def plot_contours_in_slice(slice_seg, target_axis, labels=None):
 def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
     from matplotlib import pyplot as plt
     import numpy as np
+    import tempfile
 
     plt.style.use('dark_background')
 
     paths = []
-    _, path = tempfile.mkstemp(suffix='_%s%s' % (axis, format))
+    _, path = tempfile.mkstemp(suffix='_%s%s' % (axis, __format__))
     paths.append(path)
 
     same_box = bb is not None
@@ -125,7 +128,7 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
 
             test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
 
-            plot_contours_in_slice(test, ax, labels=labels)
+            _plot_contours_in_slice_(test, ax, labels=labels)
             ax.axis('off')
 
             ax.text(0, 0, '%i' % slice_index,
@@ -144,6 +147,7 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
 def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     from matplotlib import pyplot as plt
     import numpy as np
+    import tempfile
 
     labels = list(np.unique(data))
     has_bb = bb is not None
@@ -158,7 +162,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     from nisnap.utils.slices import __get_lambdas__
     lambdas = __get_lambdas__(data)
 
-    _, path = tempfile.mkstemp(suffix='_%s%s' % (axis, format))
+    _, path = tempfile.mkstemp(suffix='_%s%s' % (axis, __format__))
     paths.append(path)
 
     abs_index = 0
@@ -194,7 +198,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                 else:
                     vmax = np.max(labels)
                     from matplotlib.colors import ListedColormap
-                    cmap = ListedColormap(aget_cmap(labels))
+                    cmap = ListedColormap(_aget_cmap_(labels))
 
                 test = test[min(xs):max(xs) + 1, min(ys):max(ys) + 1]
 
@@ -203,7 +207,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 
             ax.axis('off')
             ax.text(0, 0, '%i' % slice_index,
-                 {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
+                    {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
 
             if pbar is not None:
                 pbar.update(1)
@@ -216,6 +220,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
 def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
              contours=False, figsize=None, samebox=False, margin=5):
     from matplotlib import pyplot as plt
+    import logging as log
 
     plt.rcParams['figure.facecolor'] = 'black'
     plt.rcParams.update({'figure.max_open_warning': 0})
@@ -354,6 +359,9 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
     """
     import matplotlib
     import numpy as np
+    import logging as log
+    import os
+    import tempfile
     matplotlib.use('Agg')
 
     fp = savefig
@@ -361,7 +369,7 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
         if animated:
             f, fp = tempfile.mkstemp(suffix='.gif')
         else:
-            f, fp = tempfile.mkstemp(suffix=format)
+            f, fp = tempfile.mkstemp(suffix=__format__)
         os.close(f)
 
     from nisnap.utils.parse import __check_axes__

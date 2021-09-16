@@ -48,7 +48,7 @@ def __get_abs_minmax(data, axis, slices, margin=5):
     for a, bba in bb.items():
         res[a] = []
         for each in bba:
-            i = [max(int(min_xs - margin), 0) , int(max_xs + margin)],\
+            i = [max(int(min_xs - margin), 0), int(max_xs + margin)],\
                 [max(int(min_ys - margin), 0), int(max_ys + margin)]
             res[a].append(i)
     return res
@@ -67,7 +67,7 @@ def __maxsize__(data):
             black_pixels_mask = np.all(test == [0, 0, 0], axis=-1)
         else:
             black_pixels_mask = np.all(test == 0, axis=-1)
-    
+
         size = len(test) - len(black_pixels_mask[black_pixels_mask])
 
         maxsize = max(size, maxsize)
