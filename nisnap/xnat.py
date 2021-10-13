@@ -140,7 +140,7 @@ def __download_spm12__(x, experiment_id, destination,
     r = e.resource(resource_name)
     files = ['c1', 'c2', 'c3']
     if resource_name == 'SPM12_SEGMENT_T1T2':
-        files = ['c1', 'filled_c2', 'c3']
+        files = ['fixed_c1', 'fixed_c2', 'fixed_c3']
     for each in files:
         c = list(r.files('%s*.nii.gz' % each))[0]
         fp = op.join(destination, '%s_%s_%s.nii.gz'
