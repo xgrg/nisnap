@@ -159,7 +159,7 @@ class RunThemAll(unittest.TestCase):
         from nisnap import xnat, snap
         from nisnap.utils import aseg
         filepaths = xnat.download_resources(config='.xnat.cfg',
-                                            experiment_id='BBRCDEV_E00559',
+                                            experiment_id='BBRCDEV_E00375',
                                             resource_name='FREESURFER6',
                                             destination='/tmp/')
 
