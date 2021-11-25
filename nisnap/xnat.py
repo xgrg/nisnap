@@ -118,6 +118,74 @@ def __download_freesurfer__(x, experiment_id, destination,
     return [bg, aseg_fp]
 
 
+def __download_freesurfer7_extras__(x, experiment_id, destination,
+                                    resource_name='FREESURFER7_EXTRAS',
+                                    raw=True, cache=False):
+    import os.path as op
+    import logging as log
+
+    __freesurfer_reg_to_native__ = True
+    log.info('__freesurfer_reg_to_native__: True by default (%s)' % resource_name)
+
+    filepaths = []
+    e = x.select.experiment(experiment_id)
+    r1 = e.resource(resource_name.split('_EXTRAS')[0])
+    r2 = e.resource(resource_name)
+
+    if raw:
+        fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
+        filepaths.append(fp1)
+        if not cache:
+            t1_file = __get_T1__(x, experiment_id)
+            t1_file.get(fp1)
+    else:
+        filepaths.append(None)
+
+    extras_files = ['hypothalamic_subunits_seg.v1.mgz', 'ThalamicNuclei.v12.T1.mgz',
+                    'brainstemSsLabels.v12.mgz']
+    files = ['rawavg.mgz'] if __freesurfer_reg_to_native__ else ['nu.mgz']
+    files.extend(extras_files)
+    r = r1
+    for each in files:
+        c = list(r.files('*%s' % each))[0]
+        r = r2
+        fp = op.join(destination, '%s_%s' % (experiment_id, each))
+        if not cache:
+            c.get(fp)
+        filepaths.append(fp)
+
+    from nisnap.utils import aseg
+    for aseg_fp in filepaths[2:]:
+        bg = filepaths[1]
+
+        # Note that the filepaths for these new steps are not stored/returned
+        if __freesurfer_reg_to_native__:
+            aseg.__preproc_aseg__(aseg_fp, bg, cache=cache)
+        aseg.__swap_fs__(aseg_fp, cache=cache)
+        aseg.__swap_fs__(bg, cache=cache)
+
+    log.basicConfig(level=log.INFO)
+    log.info('__freesurfer_reg_to_native__: %s' % __freesurfer_reg_to_native__)
+
+    bg = filepaths[0]
+
+    res = []
+    for aseg_fp in filepaths[2:]:
+
+        # Files were created just before
+        # So we only need to fetch their names (with cache=True)
+        if __freesurfer_reg_to_native__:
+            aseg_fp = aseg.__preproc_aseg__(aseg_fp, bg, cache=True)
+        else:
+            aseg_fp = aseg.__swap_fs__(aseg_fp, cache=True)
+            bg = aseg.__swap_fs__(filepaths[1], cache=True)
+        res.append(aseg_fp)
+
+    res.insert(0, bg)
+
+    return res
+
+
 def __download_spm12__(x, experiment_id, destination,
                        resource_name='SPM12_SEGMENT',
                        raw=True, cache=False):
@@ -232,9 +300,13 @@ def download_resources(config, experiment_id, resource_name,
         filepaths = __download_ashs__(x, experiment_id, destination,
                                       resource_name, raw, cache)
 
+    elif 'FREESURFER' in resource_name and resource_name.endswith('_EXTRAS'):
+        filepaths = __download_freesurfer7_extras__(x, experiment_id, destination,
+                                                    resource_name, raw, cache)
     elif 'FREESURFER' in resource_name:
         filepaths = __download_freesurfer__(x, experiment_id, destination,
                                             resource_name, raw, cache)
+
 
     elif 'CAT12' in resource_name:
         if raw:
@@ -268,7 +340,7 @@ def download_resources(config, experiment_id, resource_name,
 
 
 def plot_segment(config, experiment_id, savefig=None, slices=None,
-                 resource_name='SPM12_SEGMENT',
+                 resource_name='SPM12_SEGMENT', extras='brainstem',
                  axes='xyz', raw=True, opacity=70, animated=False,
                  rowsize=None, figsize=None, contours=False, cache=False,
                  samebox=False):
@@ -296,6 +368,10 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     resource_name: string, optional
         Name of the resource where the segmentation maps are stored in the XNAT
         instance. Default: SPM12_SEGMENT
+
+    extras: string, optional
+        Only for FREESURFER7_EXTRAS. Defines which segmentation should be
+        rendered (among 'brainstem', 'thalamus', 'hypothalamus') Default: None
 
     axes: string, or a tuple of strings
         Choose the direction of the cuts (among 'x', 'y', or 'z')
@@ -357,6 +433,12 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         log.warning(msg)
         raw = True
 
+    options = ('hypothalamus', 'thalamus', 'brainstem')
+
+    if resource_name == 'FREESURFER7_EXTRAS':
+        if extras not in options:
+            raise Exception('`extras` should be among %s' % options)
+
     fp = savefig
     if savefig is None:
         if animated:
@@ -376,6 +458,9 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         raise FileNotFoundError(msg)
 
     bg = filepaths[0]
+
+    if resource_name == 'FREESURFER7_EXTRAS':
+        filepaths = [bg, filepaths[options.index(extras) + 1]]
 
     filepaths = filepaths[1] if len(filepaths) == 2 else filepaths[1:]
     from . import snap

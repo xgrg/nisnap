@@ -176,3 +176,23 @@ class RunThemAll(unittest.TestCase):
                           rowsize=4, figsize=(15, 15), savefig='/tmp/test.png',
                           animated=False,
                           samebox=True, labels=[9, 17, 48, 53])
+
+    def test_xnat_freesurfer7_extras_010(self):
+        from nisnap import xnat, snap
+        from nisnap.utils import aseg
+
+        filepaths = xnat.download_resources(config='.xnat.cfg',
+                                            experiment_id='BBRCDEV_E02823',
+                                            resource_name='FREESURFER7_EXTRAS',
+                                            destination='/tmp/')
+
+        aseg_fp = filepaths[-1]
+        aseg.__swap_fs__(aseg_fp)
+        try:
+            aseg.__preproc_aseg__(aseg_fp, filepaths[1])
+        except Exception:
+            pass
+        snap.plot_segment(aseg_fp, bg=filepaths[1], axes='x', opacity=70,
+                          rowsize=4, figsize=(15, 15), savefig='/tmp/test.png',
+                          animated=False,
+                          samebox=True)
