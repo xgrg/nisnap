@@ -1,7 +1,7 @@
 # nisnap
 
-[![pipeline status](https://img.shields.io/travis/xgrg/snaprate.svg)](https://github.com/xgrg/nisnap/commits/master)
-[![coverage report](https://coveralls.io/repos/github/xgrg/snaprate/badge.svg?branch=master)](https://coveralls.io/github/xgrg/snaprate?branch=master)
+![main](https://github.com/xgrg/nisnap/actions/workflows/main.yml/badge.svg)
+[![coverage report](https://coveralls.io/repos/github/xgrg/nisnap/badge.svg?branch=master)](https://coveralls.io/github/xgrg/nisnap?branch=master)
 [![downloads](https://img.shields.io/pypi/dm/nisnap.svg)](https://pypi.org/project/nisnap/)
 [![python versions](https://img.shields.io/pypi/pyversions/nisnap.svg)](https://pypi.org/project/nisnap/)
 [![pypi version](https://img.shields.io/pypi/v/nisnap.svg)](https://pypi.org/project/nisnap/)

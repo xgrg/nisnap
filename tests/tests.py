@@ -185,7 +185,6 @@ class RunThemAll(unittest.TestCase):
                                             experiment_id='BBRCDEV_E02823',
                                             resource_name='FREESURFER7_EXTRAS',
                                             destination='/tmp/')
-
         aseg_fp = filepaths[-1]
         aseg.__swap_fs__(aseg_fp)
         try:
@@ -194,5 +193,4 @@ class RunThemAll(unittest.TestCase):
             pass
         snap.plot_segment(aseg_fp, bg=filepaths[1], axes='x', opacity=70,
                           rowsize=4, figsize=(15, 15), savefig='/tmp/test.png',
-                          animated=False,
-                          samebox=True)
+                          animated=False, samebox=True)
