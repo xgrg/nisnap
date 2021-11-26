@@ -154,7 +154,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     d = data.ravel()
     ratio = len(d[d == 0]) / len(d)
     # has_orig = len(labels) > 50  # not bb is None
-    is_raw = ratio < 0.97
+    is_raw = ratio < 0.90
 
     paths = []
     if not has_bb:
@@ -385,7 +385,10 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
     import nibabel as nib
     if isinstance(filepaths, list):  # RGB mode
         data = __stack_img__(filepaths)
+        log.info('* RGB mode')
+
     elif isinstance(filepaths, str):  # 3D label volume
+        log.info('* Label volume')
         if labels is not None:
             from nisnap.utils import aseg
             filepaths = aseg.__picklabel_fs__(filepaths, labels=labels)

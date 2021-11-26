@@ -124,8 +124,8 @@ def __download_freesurfer7_extras__(x, experiment_id, destination,
     import os.path as op
     import logging as log
 
-    __freesurfer_reg_to_native__ = True
-    log.info('__freesurfer_reg_to_native__: True by default (%s)' % resource_name)
+    # __freesurfer_reg_to_native__ = True
+    # log.info('__freesurfer_reg_to_native__: True by default (%s)' % resource_name)
 
     filepaths = []
     e = x.select.experiment(experiment_id)
@@ -141,8 +141,9 @@ def __download_freesurfer7_extras__(x, experiment_id, destination,
     else:
         filepaths.append(None)
 
-    extras_files = ['hypothalamic_subunits_seg.v1.mgz', 'ThalamicNuclei.v12.T1.mgz',
-                    'brainstemSsLabels.v12.mgz']
+    extras_files = ['hypothalamic_subunits_seg.v1.mgz',
+                    'ThalamicNuclei.v12.T1.FSvoxelSpace.mgz',
+                    'brainstemSsLabels.v12.FSvoxelSpace.mgz']
     files = ['rawavg.mgz'] if __freesurfer_reg_to_native__ else ['nu.mgz']
     files.extend(extras_files)
     r = r1
@@ -153,6 +154,18 @@ def __download_freesurfer7_extras__(x, experiment_id, destination,
         if not cache:
             c.get(fp)
         filepaths.append(fp)
+
+    # Register hypothalamus
+    import nibabel as nib
+    from nilearn.image import resample_img
+    target_affine = nib.load(filepaths[3]).affine  # thalamus
+    img = nib.load(filepaths[2])  # hypothalamus
+    resampled_nii = resample_img(img, target_affine, interpolation='nearest')
+    fp = filepaths[2].replace('.mgz', 'FSvoxelSpace.mgz')
+    resampled_nii.to_filename(fp)
+
+    filepaths.pop(2)
+    filepaths.insert(2, fp)
 
     from nisnap.utils import aseg
     for aseg_fp in filepaths[2:]:
@@ -181,7 +194,10 @@ def __download_freesurfer7_extras__(x, experiment_id, destination,
             bg = aseg.__swap_fs__(filepaths[1], cache=True)
         res.append(aseg_fp)
 
-    res.insert(0, bg)
+    if raw:
+        res.insert(0, bg)
+    else:
+        res.insert(0, None)
 
     return res
 
@@ -301,12 +317,12 @@ def download_resources(config, experiment_id, resource_name,
                                       resource_name, raw, cache)
 
     elif 'FREESURFER' in resource_name and resource_name.endswith('_EXTRAS'):
-        filepaths = __download_freesurfer7_extras__(x, experiment_id, destination,
-                                                    resource_name, raw, cache)
+        filepaths = __download_freesurfer7_extras__(x, experiment_id,
+                                                    destination, resource_name,
+                                                    raw, cache)
     elif 'FREESURFER' in resource_name:
         filepaths = __download_freesurfer__(x, experiment_id, destination,
                                             resource_name, raw, cache)
-
 
     elif 'CAT12' in resource_name:
         if raw:
@@ -456,7 +472,6 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     except FileNotFoundError as exc:
         msg = '{0}. Retry with cache set to False.'.format(exc)
         raise FileNotFoundError(msg)
-
     bg = filepaths[0]
 
     if resource_name == 'FREESURFER7_EXTRAS':
