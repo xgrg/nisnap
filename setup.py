@@ -7,8 +7,8 @@ with open(op.join(this_directory, 'README.md')) as f:
     long_description = f.read()
 
 
-download_url = 'https://github.com/xgrg/nisnap/-/archive/v0.3.7/'\
-    'nisnap-v0.3.7.tar.gz'
+download_url = 'https://github.com/xgrg/nisnap/-/archive/v0.4/'\
+    'nisnap-v0.4.tar.gz'
 
 
 setup(
@@ -22,7 +22,8 @@ setup(
                       'numpy>=1.16',
                       'urllib3>=1.24',
                       'ipython>=7.3',
-                      'Pillow>=7.0'],
+                      'Pillow>=7.0',
+                      'nilearn>=0.8'],
     scripts=['bin/nisnap'],
     long_description=long_description,
     long_description_content_type='text/markdown',
