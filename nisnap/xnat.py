@@ -64,11 +64,13 @@ def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
 
 def __download_freesurfer__(x, experiment_id, destination,
                             resource_name='FREESURFER7',
-                            raw=True, cache=False):
+                            raw=True, cache=False, fn='aparc+aseg.mgz'):
     import os.path as op
     filepaths = []
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
+    if not r.exists():
+        raise Exception('Experiment %s has no resource %s.' % (experiment_id, resource_name))
 
     if raw:
         fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
@@ -79,14 +81,29 @@ def __download_freesurfer__(x, experiment_id, destination,
     else:
         filepaths.append(None)
 
-    files = ['rawavg.mgz', 'aparc+aseg.mgz'] if __freesurfer_reg_to_native__\
-        else ['nu.mgz', 'aparc+aseg.mgz']
-
+    files = ['rawavg.mgz', fn] if __freesurfer_reg_to_native__\
+        else ['nu.mgz', fn]
     for each in files:
-        c = list(r.files('*%s' % each))[0]
+        c = list(r.files('*%s' % each))
+        if each in ['nu.mgz', 'rawavg.mgz']:  # should come from FREESURFER7
+            r1 = e.resource(resource_name.split('_EXTRAS')[0])
+            c = list(r1.files('*%s' % each))
+
         fp = op.join(destination, '%s_%s' % (experiment_id, each))
         if not cache:
-            c.get(fp)
+            c[0].get(fp)
+        filepaths.append(fp)
+
+    if fn == 'hypothalamic_subunits_seg.v1.mgz':
+        # Register hypothalamus
+        import nibabel as nib
+        from nilearn.image import resample_img
+        target_affine = nib.load(filepaths[1]).affine  # thalamus
+        img = nib.load(filepaths[2])  # hypothalamus
+        resampled_nii = resample_img(img, target_affine, interpolation='nearest')
+        fp = filepaths[2].replace('.mgz', 'FSvoxelSpace.mgz')
+        resampled_nii.to_filename(fp)
+        filepaths.pop(-1)
         filepaths.append(fp)
 
     from nisnap.utils import aseg
@@ -115,90 +132,10 @@ def __download_freesurfer__(x, experiment_id, destination,
         aseg_fp = aseg.__swap_fs__(aseg_fp, cache=True)
         bg = aseg.__swap_fs__(filepaths[1], cache=True)
 
-    return [bg, aseg_fp]
-
-
-def __download_freesurfer7_extras__(x, experiment_id, destination,
-                                    resource_name='FREESURFER7_EXTRAS',
-                                    raw=True, cache=False):
-    import os.path as op
-    import logging as log
-
-    # __freesurfer_reg_to_native__ = True
-    # log.info('__freesurfer_reg_to_native__: True by default (%s)' % resource_name)
-
-    filepaths = []
-    e = x.select.experiment(experiment_id)
-    r1 = e.resource(resource_name.split('_EXTRAS')[0])
-    r2 = e.resource(resource_name)
-
     if raw:
-        fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
-        filepaths.append(fp1)
-        if not cache:
-            t1_file = __get_T1__(x, experiment_id)
-            t1_file.get(fp1)
+        res = [bg, aseg_fp]
     else:
-        filepaths.append(None)
-
-    extras_files = ['hypothalamic_subunits_seg.v1.mgz',
-                    'ThalamicNuclei.v12.T1.FSvoxelSpace.mgz',
-                    'brainstemSsLabels.v12.FSvoxelSpace.mgz']
-    files = ['rawavg.mgz'] if __freesurfer_reg_to_native__ else ['nu.mgz']
-    files.extend(extras_files)
-    r = r1
-    for each in files:
-        c = list(r.files('*%s' % each))[0]
-        r = r2
-        fp = op.join(destination, '%s_%s' % (experiment_id, each))
-        if not cache:
-            c.get(fp)
-        filepaths.append(fp)
-
-    # Register hypothalamus
-    import nibabel as nib
-    from nilearn.image import resample_img
-    target_affine = nib.load(filepaths[3]).affine  # thalamus
-    img = nib.load(filepaths[2])  # hypothalamus
-    resampled_nii = resample_img(img, target_affine, interpolation='nearest')
-    fp = filepaths[2].replace('.mgz', 'FSvoxelSpace.mgz')
-    resampled_nii.to_filename(fp)
-
-    filepaths.pop(2)
-    filepaths.insert(2, fp)
-
-    from nisnap.utils import aseg
-    for aseg_fp in filepaths[2:]:
-        bg = filepaths[1]
-
-        # Note that the filepaths for these new steps are not stored/returned
-        if __freesurfer_reg_to_native__:
-            aseg.__preproc_aseg__(aseg_fp, bg, cache=cache)
-        aseg.__swap_fs__(aseg_fp, cache=cache)
-        aseg.__swap_fs__(bg, cache=cache)
-
-    log.basicConfig(level=log.INFO)
-    log.info('__freesurfer_reg_to_native__: %s' % __freesurfer_reg_to_native__)
-
-    bg = filepaths[0]
-
-    res = []
-    for aseg_fp in filepaths[2:]:
-
-        # Files were created just before
-        # So we only need to fetch their names (with cache=True)
-        if __freesurfer_reg_to_native__:
-            aseg_fp = aseg.__preproc_aseg__(aseg_fp, bg, cache=True)
-        else:
-            aseg_fp = aseg.__swap_fs__(aseg_fp, cache=True)
-            bg = aseg.__swap_fs__(filepaths[1], cache=True)
-        res.append(aseg_fp)
-
-    if raw:
-        res.insert(0, bg)
-    else:
-        res.insert(0, None)
-
+        res = [None, aseg_fp]
     return res
 
 
@@ -317,12 +254,29 @@ def download_resources(config, experiment_id, resource_name,
                                       resource_name, raw, cache)
 
     elif 'FREESURFER' in resource_name and resource_name.endswith('_EXTRAS'):
-        filepaths = __download_freesurfer7_extras__(x, experiment_id,
-                                                    destination, resource_name,
-                                                    raw, cache)
+        files = ['hypothalamic_subunits_seg.v1.mgz',
+                 'ThalamicNuclei.v12.T1.FSvoxelSpace.mgz',
+                 'brainstemSsLabels.v12.FSvoxelSpace.mgz']
+        filepaths = []
+        for fn in files:
+            fp = __download_freesurfer__(x, experiment_id,
+                                         destination, resource_name,
+                                         raw, cache, fn=fn)
+            if len(filepaths) != 0:
+                fp = [fp[-1]]
+            filepaths.extend(fp)
+
     elif 'FREESURFER' in resource_name:
         filepaths = __download_freesurfer__(x, experiment_id, destination,
                                             resource_name, raw, cache)
+        if resource_name == 'FREESURFER7':
+            fn = '%s.hippoAmygLabels-T1.v21.%s.FSvoxelSpace.mgz'
+            for side in ['lh', 'rh']:
+                for each in ['CA', 'HBT', 'FS60']:
+                    fp = __download_freesurfer__(x, experiment_id, destination,
+                                                 resource_name, raw, cache,
+                                                 fn=fn % (side, each))
+                    filepaths.append(fp[-1])
 
     elif 'CAT12' in resource_name:
         if raw:
@@ -356,7 +310,7 @@ def download_resources(config, experiment_id, resource_name,
 
 
 def plot_segment(config, experiment_id, savefig=None, slices=None,
-                 resource_name='SPM12_SEGMENT', extras='brainstem',
+                 resource_name='SPM12_SEGMENT', fn='aparc+aseg.mgz',
                  axes='xyz', raw=True, opacity=70, animated=False,
                  rowsize=None, figsize=None, contours=False, cache=False,
                  samebox=False):
@@ -385,7 +339,7 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         Name of the resource where the segmentation maps are stored in the XNAT
         instance. Default: SPM12_SEGMENT
 
-    extras: string, optional
+    fn: string, optional
         Only for FREESURFER7_EXTRAS. Defines which segmentation should be
         rendered (among 'brainstem', 'thalamus', 'hypothalamus') Default: None
 
@@ -449,11 +403,20 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         log.warning(msg)
         raw = True
 
-    options = ('hypothalamus', 'thalamus', 'brainstem')
-
     if resource_name == 'FREESURFER7_EXTRAS':
-        if extras not in options:
-            raise Exception('`extras` should be among %s' % options)
+        options = ['hypothalamic_subunits_seg.v1.mgz',
+                   'ThalamicNuclei.v12.T1.FSvoxelSpace.mgz',
+                   'brainstemSsLabels.v12.FSvoxelSpace.mgz']
+        if fn not in options:
+            raise Exception('`fn` should be among %s' % options)
+    elif resource_name.startswith('FREESURFER'):
+        options = ['aparc+aseg.mgz']
+        fn0 = '%s.hippoAmygLabels-T1.v21.%s.FSvoxelSpace.mgz'
+        for side in ['lh', 'rh']:
+            for each in ['CA', 'HBT', 'FS60']:
+                options.append(fn0 % (side, each))
+        if fn not in options:
+            raise Exception('`fn` should be among %s' % options)
 
     fp = savefig
     if savefig is None:
@@ -475,7 +438,12 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
     bg = filepaths[0]
 
     if resource_name == 'FREESURFER7_EXTRAS':
-        filepaths = [bg, filepaths[options.index(extras) + 1]]
+        filepaths = [bg, filepaths[options.index(fn) + 1]]
+    elif resource_name.startswith('FREESURFER'):
+        if fn[3:].startswith('hippoAmygLabels'):
+            filepaths = [bg, filepaths[options.index(fn) + 1]]
+        else:
+            filepaths = filepaths[:2]
 
     filepaths = filepaths[1] if len(filepaths) == 2 else filepaths[1:]
     from . import snap
