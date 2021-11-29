@@ -403,6 +403,11 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         log.warning(msg)
         raw = True
 
+    options = ['aparc+aseg.mgz']
+    fn0 = '%s.hippoAmygLabels-T1.v21.%s.FSvoxelSpace.mgz'
+    for side in ['lh', 'rh']:
+        for each in ['CA', 'HBT', 'FS60']:
+            options.append(fn0 % (side, each))
     if resource_name == 'FREESURFER7_EXTRAS':
         options = ['hypothalamic_subunits_seg.v1.mgz',
                    'ThalamicNuclei.v12.T1.FSvoxelSpace.mgz',
@@ -410,11 +415,6 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         if fn not in options:
             raise Exception('`fn` should be among %s' % options)
     elif resource_name.startswith('FREESURFER'):
-        options = ['aparc+aseg.mgz']
-        fn0 = '%s.hippoAmygLabels-T1.v21.%s.FSvoxelSpace.mgz'
-        for side in ['lh', 'rh']:
-            for each in ['CA', 'HBT', 'FS60']:
-                options.append(fn0 % (side, each))
         if fn not in options:
             raise Exception('`fn` should be among %s' % options)
 
