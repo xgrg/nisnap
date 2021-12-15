@@ -74,11 +74,13 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
     from matplotlib import pyplot as plt
     import numpy as np
     import tempfile
+    import os
 
     plt.style.use('dark_background')
 
     paths = []
-    _, path = tempfile.mkstemp(suffix='_%s%s' % (axis, __format__))
+    fd, path = tempfile.mkstemp(suffix='_%s%s' % (axis, __format__))
+    os.close(fd)
     paths.append(path)
 
     same_box = bb is not None
@@ -148,6 +150,7 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     from matplotlib import pyplot as plt
     import numpy as np
     import tempfile
+    import os
 
     labels = list(np.unique(data))
     has_bb = bb is not None
@@ -165,7 +168,8 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     from nisnap.utils.slices import __get_lambdas__
     lambdas = __get_lambdas__(data)
 
-    _, path = tempfile.mkstemp(suffix='_%s%s' % (axis, __format__))
+    fd, path = tempfile.mkstemp(suffix='_%s%s' % (axis, __format__))
+    os.close(fd)
     paths.append(path)
 
     abs_index = 0
