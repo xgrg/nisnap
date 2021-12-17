@@ -155,9 +155,9 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
     labels = list(np.unique(data))
     has_bb = bb is not None
     d = data.ravel()
-    ratio = len(d[d == 0]) / len(d)
+    ratio = len(d[d <= 10]) / len(d)
     # has_orig = len(labels) > 50  # not bb is None
-    is_raw = ratio < 0.90
+    is_raw = ratio < 0.80
 
     paths = []
     if not has_bb:
