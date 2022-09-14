@@ -4,6 +4,31 @@ from nisnap.utils.aseg import amygdala_nuclei, hippocampal_subfields
 __format__ = '.png'
 
 
+def load_image(fp):
+    import nibabel as nib
+    import numpy as np
+    try:
+        d = nib.load(fp).dataobj
+    except nib.filebasedimages.ImageFileError:
+        import h5py
+        f = h5py.File(fp, "r", swmr=True)
+        d = None
+
+        for e in ['image', 'image_x1', 'resized_image', 'segmented_image']:
+            if e in f.keys():
+                print(e)
+                d = f[e]
+                break
+        if d is None:
+            print(f.keys())
+            raise Error('Error')
+        d = np.transpose(d)
+        d = np.expand_dims(d, axis=2)
+        d = np.flip(d, axis=1)
+
+    return d
+
+
 def pick_labels(data, labels):
     """Replaces all values by zero in a Numpy array (`data`) except values
     passed in `labels`. Used to select some specific labels in a given
@@ -133,8 +158,8 @@ def _snap_contours_(data, slices, axis, bg, figsize=None, bb=None, pbar=None):
             _plot_contours_in_slice_(test, ax, labels=labels)
             ax.axis('off')
 
-            ax.text(0, 0, '%i' % slice_index,
-                    {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
+            # ax.text(0, 0, '%i' % slice_index,
+            #        {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
 
             if pbar is not None:
                 pbar.update(1)
@@ -213,8 +238,8 @@ def _snap_slices_(data, slices, axis, bb=None, figsize=None, pbar=None):
                           vmin=0, vmax=vmax)
 
             ax.axis('off')
-            ax.text(0, 0, '%i' % slice_index,
-                    {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
+            # ax.text(0, 0, '%i' % slice_index,
+            #        {'color': 'w', 'fontsize': 10}, va="bottom", ha="left")
 
             if pbar is not None:
                 pbar.update(1)
@@ -294,8 +319,8 @@ def __snap__(data, axes='xyz', bg=None, slices=None, rowsize=None,
 def __stack_img__(filepaths):
     import nibabel as nib
     import numpy as np
-
-    stack = [np.asarray(nib.load(e).dataobj) for e in filepaths[:]]
+    d = load_image(e) # nib.load(e).dataobj
+    stack = [np.asarray(d) for e in filepaths[:]]
 
     data = np.stack(stack, axis=-1)
 
@@ -396,10 +421,13 @@ def plot_segment(filepaths, axes='xyz', bg=None, opacity=90, slices=None,
         if labels is not None:
             from nisnap.utils import aseg
             filepaths = aseg.__picklabel_fs__(filepaths, labels=labels)
-        data = np.asarray(nib.load(filepaths).dataobj)
+        d = load_image(filepaths) # nib.load(filepaths).dataobj
+        data = np.asarray(d)
 
     if bg is not None:
-        bg = np.asarray(nib.load(bg).dataobj)
+        d = load_image(bg)
+
+        bg = np.asarray(d)
 
     paths, paths_orig = __snap__(data, axes=axes, bg=bg,
                                  slices=slices, contours=contours,
