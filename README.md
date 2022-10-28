@@ -5,7 +5,7 @@
 [![downloads](https://img.shields.io/pypi/dm/nisnap.svg)](https://pypi.org/project/nisnap/)
 [![python versions](https://img.shields.io/pypi/pyversions/nisnap.svg)](https://pypi.org/project/nisnap/)
 [![pypi version](https://img.shields.io/pypi/v/nisnap.svg)](https://pypi.org/project/nisnap/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4075418.svg)](https://doi.org/10.5281/zenodo.4075418)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5779222.svg)](https://doi.org/10.5281/zenodo.5779222)
 
 
 Create snapshots of segmentation maps produced by neuroimaging software.
