@@ -192,6 +192,24 @@ def __download_ashs__(x, experiment_id, destination, resource_name='ASHS',
     return filepaths
 
 
+def __download_lcmodel__(x, experiment_id, destination, resource_name='LCMODEL',
+                      raw=True, cache=False, fn=None):
+    import os.path as op
+
+    filepaths = []
+    e = x.select.experiment(experiment_id)
+    r = e.resource(resource_name)
+
+    for each in ['*sT1W_3D_TFE_HR_32_iso1.2_long_AT.nii.gz', fn]:
+        c = list(r.files('*%s' % each))[0]
+        fp = op.join(destination, '%s_%s_%s' % (experiment_id,
+                                                resource_name, each))
+        if not cache:
+            c.get(fp)
+        filepaths.append(fp)
+    return filepaths
+
+
 def download_resources(config, experiment_id, resource_name,
                        destination, raw=True, cache=False):
     """Download a given experiment/resource from an XNAT instance in a local
