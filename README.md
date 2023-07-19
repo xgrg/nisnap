@@ -1,7 +1,7 @@
 # nisnap
 
 ![main](https://github.com/jhuguetn/nisnap/actions/workflows/main.yml/badge.svg)
-[![coverage report](https://coveralls.io/repos/github/jhuguetn/nisnap/badge.svg?branch=master)](https://coveralls.io/github/xgrg/nisnap?branch=master)
+[![coverage report](https://coveralls.io/repos/github/jhuguetn/nisnap/badge.svg?branch=master)](https://coveralls.io/github/jhuguetn/nisnap?branch=master)
 [![downloads](https://img.shields.io/pypi/dm/nisnap.svg)](https://pypi.org/project/nisnap/)
 [![python versions](https://img.shields.io/pypi/pyversions/nisnap.svg)](https://pypi.org/project/nisnap/)
 [![pypi version](https://img.shields.io/pypi/v/nisnap.svg)](https://pypi.org/project/nisnap/)
