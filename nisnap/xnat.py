@@ -7,18 +7,18 @@ __all__ = []
 
 def __is_valid_scan__(xnat_instance, scan):
     """ Checks if a scan is valid according to a set of rules """
-    valid = False
     import fnmatch
+    valid = False
     prefix = [i.split('/')[0] for i in scan.keys()
               if fnmatch.fnmatch(i, '*scandata/id')][0]
     if not prefix:
         raise Exception
     exp = xnat_instance.select.experiment(scan['ID'])
-    dt = exp.scan(scan['%s/id' % prefix]).datatype()
+    dt = exp.scan(scan[f'{prefix}/id']).datatype()
     datatypes = ['xnat:mrScanData', 'xnat:petScanData', 'xnat:ctScanData']
-    if scan['%s/id' % prefix].isdigit() \
-            and not scan['%s/id' % prefix].startswith('0') \
-            and scan['%s/quality' % prefix] == 'usable' \
+    if scan[f'{prefix}/id'].isdigit() \
+            and not scan[f'{prefix}/id'].startswith('0') \
+            and scan[f'{prefix}/quality'] == 'usable' \
             and dt in datatypes:
         valid = True
     return valid
@@ -37,7 +37,7 @@ def __get_T1__(x, experiment_id, sequence='T1_ALFA1'):
         if scan.attrs.get('type').rstrip(' ') in t1_lut_names and\
                 __is_valid_scan__(x, s):
             t1_scans.append(scan.id())
-    assert(len(t1_scans) == 1)
+    assert len(t1_scans) == 1
     files = list(e.scan(t1_scans[0]).resource('NIFTI').files('*.nii.gz'))
     return files[0]
 
@@ -56,9 +56,8 @@ def __get_T2__(x, experiment_id, sequence='T2_ALFA1'):
         if scan.attrs.get('type').rstrip(' ') in t2_lut_names and\
                 __is_valid_scan__(x, s):
             t2_scans.append(scan.id())
-    assert(len(t2_scans) == 1)
-    t2_t1space = list(e.resource('ANTS').files('*%s*T1space.nii.gz'
-                                               % t2_scans[0]))[0]
+    assert len(t2_scans) == 1
+    t2_t1space = list(e.resource('ANTS').files(f'*{t2_scans[0]}*T1space.nii.gz'))[0]
     return t2_t1space
 
 
@@ -70,10 +69,10 @@ def __download_freesurfer__(x, experiment_id, destination,
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
     if not r.exists():
-        raise Exception('Experiment %s has no resource %s.' % (experiment_id, resource_name))
+        raise Exception(f'Experiment {experiment_id} has no resource {resource_name}.')
 
     if raw:
-        fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
+        fp1 = op.join(destination, f'{experiment_id}_T1.nii.gz')
         filepaths.append(fp1)
         if not cache:
             t1_file = __get_T1__(x, experiment_id)
@@ -84,12 +83,12 @@ def __download_freesurfer__(x, experiment_id, destination,
     files = ['rawavg.mgz', fn] if __freesurfer_reg_to_native__\
         else ['nu.mgz', fn]
     for each in files:
-        c = list(r.files('*%s' % each))
+        c = list(r.files(f'*{each}'))
         if each in ['nu.mgz', 'rawavg.mgz']:  # should come from FREESURFER7
             r1 = e.resource(resource_name.split('_EXTRAS')[0])
-            c = list(r1.files('*%s' % each))
+            c = list(r1.files(f'*{each}'))
 
-        fp = op.join(destination, '%s_%s' % (experiment_id, each))
+        fp = op.join(destination, f'{experiment_id}_{each}')
         if not cache:
             c[0].get(fp)
         filepaths.append(fp)
@@ -149,7 +148,7 @@ def __download_spm12__(x, experiment_id, destination,
     r = e.resource(resource_name)
 
     if raw:
-        fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
+        fp1 = op.join(destination, f'{experiment_id}_T1.nii.gz')
         filepaths.append(fp1)
         if not cache:
             t1_file = __get_T1__(x, experiment_id)
@@ -158,14 +157,12 @@ def __download_spm12__(x, experiment_id, destination,
     else:
         filepaths.append(None)
 
-    r = e.resource(resource_name)
     files = ['c1', 'c2', 'c3']
     if resource_name == 'SPM12_SEGMENT_T1T2':
         files = ['fixed_c1', 'fixed_c2', 'fixed_c3']
     for each in files:
-        c = list(r.files('%s*.nii.gz' % each))[0]
-        fp = op.join(destination, '%s_%s_%s.nii.gz'
-                                  % (experiment_id, resource_name, each))
+        c = list(r.files(f'{each}*.nii.gz'))[0]
+        fp = op.join(destination, f'{experiment_id}_{resource_name}_{each}.nii.gz')
         if not cache:
             c.get(fp)
         filepaths.append(fp)
@@ -181,11 +178,9 @@ def __download_ashs__(x, experiment_id, destination, resource_name='ASHS',
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
 
-    r = e.resource(resource_name)
     for each in ['tse.nii.gz', 'left_lfseg_corr_nogray.nii.gz']:
-        c = list(r.files('*%s' % each))[0]
-        fp = op.join(destination, '%s_%s_%s' % (experiment_id,
-                                                resource_name, each))
+        c = list(r.files(f'*{each}'))[0]
+        fp = op.join(destination, f'{experiment_id}_{resource_name}_{each}.nii.gz')
         if not cache:
             c.get(fp)
         filepaths.append(fp)
@@ -193,17 +188,16 @@ def __download_ashs__(x, experiment_id, destination, resource_name='ASHS',
 
 
 def __download_lcmodel__(x, experiment_id, destination, resource_name='LCMODEL',
-                      raw=True, cache=False, fn=None):
+                         raw=True, cache=False, fn='rAmask_Hipo*'):
     import os.path as op
 
     filepaths = []
     e = x.select.experiment(experiment_id)
     r = e.resource(resource_name)
 
-    for each in ['*sT1W_3D_TFE_HR_32_iso1.2_long_AT.nii.gz', fn]:
-        c = list(r.files('*%s' % each))[0]
-        fp = op.join(destination, '%s_%s_%s' % (experiment_id,
-                                                resource_name, each))
+    for each in ['T1*.nii.gz', fn]:
+        c = list(r.files(f'*{each}'))[0]
+        fp = op.join(destination, f'{experiment_id}_{resource_name}_{each}.nii.gz')
         if not cache:
             c.get(fp)
         filepaths.append(fp)
@@ -271,6 +265,10 @@ def download_resources(config, experiment_id, resource_name,
         filepaths = __download_ashs__(x, experiment_id, destination,
                                       resource_name, raw, cache)
 
+    elif resource_name == 'LCMODEL':
+        filepaths = __download_lcmodel__(x, experiment_id, destination,
+                                         resource_name, raw, cache)
+
     elif 'FREESURFER' in resource_name and resource_name.endswith('_EXTRAS'):
         files = ['hypothalamic_subunits_seg.v1.mgz',
                  'ThalamicNuclei.v12.T1.FSvoxelSpace.mgz',
@@ -298,7 +296,7 @@ def download_resources(config, experiment_id, resource_name,
 
     elif 'CAT12' in resource_name:
         if raw:
-            fp1 = op.join(destination, '%s_T1.nii.gz' % experiment_id)
+            fp1 = op.join(destination, f'{experiment_id}_T1.nii.gz')
             filepaths.append(fp1)
             if not cache:
                 t2_t1space = __get_T1__(x, experiment_id)
@@ -308,9 +306,8 @@ def download_resources(config, experiment_id, resource_name,
 
         r = e.resource(resource_name)
         for each in ['p1', 'p2', 'p3']:
-            c = list(r.files('mri/%s*.nii.gz' % each))[0]
-            fp = op.join(destination, '%s_%s_%s.nii.gz'
-                                      % (experiment_id, resource_name, each))
+            c = list(r.files(f'mri/{each}*.nii.gz'))[0]
+            fp = op.join(destination, f'{experiment_id}_{resource_name}_{each}.nii.gz')
             if not cache:
                 c.get(fp)
             filepaths.append(fp)
@@ -321,7 +318,7 @@ def download_resources(config, experiment_id, resource_name,
             if f is None and not raw:
                 continue
             if not op.isfile(f):
-                msg = 'No such file: \'%s\'. Retry with cache set to False.' % f
+                msg = f'No such file: \'{f}\'. Retry with cache set to False.'
                 raise FileNotFoundError(msg)
 
     return filepaths
@@ -431,10 +428,10 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
                    'ThalamicNuclei.v12.T1.FSvoxelSpace.mgz',
                    'brainstemSsLabels.v12.FSvoxelSpace.mgz']
         if fn not in options:
-            raise Exception('`fn` should be among %s' % options)
+            raise Exception(f'`fn` should be among {options}')
     elif resource_name.startswith('FREESURFER'):
         if fn not in options:
-            raise Exception('`fn` should be among %s' % options)
+            raise Exception(f'`fn` should be among {options}')
 
     fp = savefig
     if savefig is None:
@@ -451,8 +448,8 @@ def plot_segment(config, experiment_id, savefig=None, slices=None,
         filepaths = download_resources(config, experiment_id, resource_name,
                                        dest, raw=raw, cache=cache)
     except FileNotFoundError as exc:
-        msg = '{0}. Retry with cache set to False.'.format(exc)
-        raise FileNotFoundError(msg)
+        msg = f'{exc}. Retry with cache set to False.'
+        raise FileNotFoundError(msg) from exc
     bg = filepaths[0]
 
     if resource_name == 'FREESURFER7_EXTRAS':

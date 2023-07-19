@@ -188,3 +188,11 @@ class RunThemAll(unittest.TestCase):
                           experiment_id='BBRCDEV_E02823',
                           resource_name='FREESURFER7',
                           savefig='/tmp/test.png')
+
+    def test_011_lcmodel(self):
+        from nisnap import xnat
+        figsize = {'x': (5, 1)}
+        xnat.plot_segment(config='.xnat.cfg',
+                          experiment_id='BBRCDEV_E00398',
+                          resource_name='LCMODEL', figsize=figsize,
+                          axes='x', rowsize=5, cache=False)
