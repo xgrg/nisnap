@@ -41,7 +41,7 @@ jobs:
         env:
           XNAT_USER: ${{ secrets.XNAT_USER }}
           XNAT_PASSWORD: ${{ secrets.XNAT_PASSWORD }}
-      - run: nosetests tests --nocapture --nologcapture --with-coverage --cover-erase --cover-inclusive --cover-package .
+      - run: pytest
         env:
           CI_TEST: 0
           PYTHONPATH: $PYTHONPATH:$(pwd)
