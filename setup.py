@@ -7,8 +7,8 @@ with open(op.join(this_directory, 'README.md')) as f:
     long_description = f.read()
 
 
-download_url = 'https://github.com/xgrg/nisnap/-/archive/v0.4/'\
-    'nisnap-v0.4.tar.gz'
+download_url = 'https://github.com/xgrg/nisnap/-/archive/v0.4.1/'\
+    'nisnap-v0.4.1.tar.gz'
 
 
 setup(
@@ -38,5 +38,5 @@ setup(
                  'Intended Audience :: Developers',
                  'Topic :: Scientific/Engineering',
                  'Operating System :: Unix',
-                 'Programming Language :: Python :: 3.7'],
+                 'Programming Language :: Python :: 3.8'],
     package_data={'nisnap': ['utils/colormap.json']})

@@ -1,7 +1,7 @@
 # nisnap
 
-![main](https://github.com/xgrg/nisnap/actions/workflows/main.yml/badge.svg)
-[![coverage report](https://coveralls.io/repos/github/xgrg/nisnap/badge.svg?branch=master)](https://coveralls.io/github/xgrg/nisnap?branch=master)
+![main](https://github.com/jhuguetn/nisnap/actions/workflows/main.yml/badge.svg)
+[![coverage report](https://coveralls.io/repos/github/jhuguetn/nisnap/badge.svg?branch=master)](https://coveralls.io/github/xgrg/nisnap?branch=master)
 [![downloads](https://img.shields.io/pypi/dm/nisnap.svg)](https://pypi.org/project/nisnap/)
 [![python versions](https://img.shields.io/pypi/pyversions/nisnap.svg)](https://pypi.org/project/nisnap/)
 [![pypi version](https://img.shields.io/pypi/v/nisnap.svg)](https://pypi.org/project/nisnap/)
@@ -271,7 +271,6 @@ def download_resources(config, experiment_id, resource_name,  destination,
     nisnap.plot_segment : To plot segmentation maps directly providing their
         filepaths
     """
-
 ```
 
 ## How to install
