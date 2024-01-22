@@ -36,11 +36,12 @@ jobs:
       - run: python --version
       - run: python -m pip install --upgrade pip
       - run: pip install -r requirements.txt
-      - name: Fetch config
-        run: python tests/fetch_config.py https://devxnat.barcelonabeta.org --xnat_user $XNAT_USER --xnat_password $XNAT_PASSWORD
-        env:
-          XNAT_USER: ${{ secrets.XNAT_USER }}
-          XNAT_PASSWORD: ${{ secrets.XNAT_PASSWORD }}
+      - name: create config json
+        id: create-json
+        uses: jsdaniell/create-json@1.2.2
+        with:
+          name: ".xnat.cfg"
+          json: ${{ secrets.XNAT_CFG }}
       - run: pytest
         env:
           CI_TEST: 0
